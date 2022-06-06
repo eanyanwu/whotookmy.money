@@ -1,0 +1,14 @@
+---
+- name: Provision a new server
+  hosts: all
+  remote_user: root
+
+  vars:
+    username: deploy-user
+    password: "{{ lookup('env', 'DEPLOY_USER_PASSWORD') }}"
+    public_key: "{{ lookup('env', 'DEPLOY_USER_PUBKEY') }}"
+  
+  roles:
+    - user
+    - packages
+    - ssh

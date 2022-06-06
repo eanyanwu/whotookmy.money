@@ -1,0 +1,571 @@
+Return-Path: <no.reply.alerts.15@chase.com>
+Received: by p-pm-inbound03a-aws-useast1a.inbound.postmarkapp.com (Postfix, from userid 996)
+	id 4207040004C; Sun,  5 Jun 2022 20:44:59 +0000 (UTC)
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	p-pm-inbound03a-aws-useast1a
+X-Spam-Status: No
+X-Spam-Score: -12.7
+X-Spam-Tests: DKIMWL_WL_HIGH,DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,HTML_MESSAGE,
+	MIME_HTML_ONLY,RCVD_IN_DNSWL_HI,SPF_FAIL,SPF_HELO_PASS,T_REMOTE_IMAGE,
+	T_SCC_BODY_TEXT_LINE,USER_IN_DEF_DKIM_WL
+Received-SPF: fail (chase.com: Sender is not authorized by default to use 'no.reply.alerts.15@chase.com' in 'mfrom' identity (mechanism '-all' matched)) receiver=p-pm-inbound03a-aws-useast1a; identity=mailfrom; envelope-from="no.reply.alerts.15@chase.com"; helo=forward3-smtp.messagingengine.com; client-ip=66.111.4.237
+Received: from forward3-smtp.messagingengine.com (forward3-smtp.messagingengine.com [66.111.4.237])
+	(using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by p-pm-inbound03a-aws-useast1a.inbound.postmarkapp.com (Postfix) with ESMTPS id C614540743E
+	for <alerts@whotookmy.money>; Sun,  5 Jun 2022 20:44:58 +0000 (UTC)
+Received: from mailredirect.nyi.internal (imap48.nyi.internal [10.202.2.98])
+	by mailforward.nyi.internal (Postfix) with ESMTP id 553031940CD3
+	for <alerts@whotookmy.money>; Sun,  5 Jun 2022 16:44:58 -0400 (EDT)
+Received: from localhost (localhost [127.0.0.1])
+	by mailredirect.nyi.internal (Postfix) with ESMTP id 37E3431A005D
+	for <alerts@whotookmy.money>; Sun,  5 Jun 2022 16:44:58 -0400 (EDT)
+X-Sieve-Action: redirect
+Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
+	 by sloti48n23 (Cyrus 3.7.0-alpha0-591-gfe6c3a2700-fm-20220427.001-gfe6c3a27) with LMTPA;
+	 Sun, 05 Jun 2022 16:44:58 -0400
+X-Cyrus-Session-Id: sloti48n23-1654461898-1195960-2-4952751492623904895
+X-Sieve: CMU Sieve 3.0
+X-Resolved-to: hello@ezeanyinabia.com
+X-Delivered-to: hello@ezeanyinabia.com
+X-Mail-from: no.reply.alerts.15@chase.com
+Received: from mx3 ([10.202.2.202])
+  by compute5.internal (LMTPProxy); Sun, 05 Jun 2022 16:44:58 -0400
+Received: from mx3.messagingengine.com (localhost [127.0.0.1])
+	by mailmx.nyi.internal (Postfix) with ESMTP id 10C981960089
+	for <hello@ezeanyinabia.com>; Sun,  5 Jun 2022 16:44:58 -0400 (EDT)
+Received: from mx3.messagingengine.com (localhost [127.0.0.1])
+    by mx3.messagingengine.com (Authentication Milter) with ESMTP
+    id 49DF194C20E;
+    Sun, 5 Jun 2022 16:44:58 -0400
+ARC-Seal: i=1; a=rsa-sha256; cv=none; d=messagingengine.com; s=fm1; t=
+    1654461898; b=draDJQfDs6FHAp6gW9niXFJj/iXkuaGlZjBJ4OJ0BnUxB9ZUE7
+    GfI65zULKXFJRmiIhLUtMyecjUP2Cxk8frbMwa2Kut9928uIafAPvRmzZHtLWLzL
+    Rz3lLGde0TgEjtgoZvqrNemoL5cBxVOL0KLm2Xz4DVYkGJ5WT7ypEiek5ShA3Dpk
+    t9Itn7hx19hDhUEvJLU2rtjM++1QxLs5+MD+42q8jcP16EYLShP2YEEWzMFetf+r
+    tDIPuERE4vUNmcw6l0cPf/wLxeKdkLll33CCPqbd5Pwz7YdhDVD45MtXcOMUrufg
+    nffVjtcw7av7CWZ5N1EP+EW/K5bJFX7+WUOQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=
+    messagingengine.com; h=date:from:to:message-id:subject
+    :mime-version:content-type:content-transfer-encoding; s=fm1; t=
+    1654461898; bh=xhiYL2xVVrojujqUWIwLxtxOWwcLGuQ7KvgIZ6GIHrQ=; b=O
+    BdP7L8BF2cuSJZO535dO4QvMXMaAr/Yy2qpRL0jCr1HfHDld/H+SaM1p68nkO9MQ
+    dPBVNaqDSFNW+ZEa1B+X9v2y4y9iveETfzXdNeGRx26wPN4ALBzmGq+97kAIS66A
+    ZVFEt7FljQcGAYD0L9ZM1TVYExG+cfFOif6F5bJ8QJUQAl6zjRCD51zd0eWjDKk0
+    skaw0a089pbD0piFB7llQkqxCK+G2HVax7YVgkvKJL69faUaYKktWplFOictSsU+
+    95UVJBkYotGhiEbMxiyrFG252dbRDf8KhM0CtydFyWnlSws/2fhqvKgUfK4xvtba
+    r+0GgDJikHu6aIdQhMMrw==
+ARC-Authentication-Results: i=1; mx3.messagingengine.com;
+    x-csa=none;
+    x-me-sender=none;
+    x-ptr=pass smtp.helo=shvf23.jpmchase.com policy.ptr=shvf23.jpmchase.com;
+    bimi=pass header.d=chase.com header.selector=default
+    policy.authority=pass
+    policy.authority-uri=https://bimi.entrust.net/chase.com/certchain.pem;
+    arc=none (no signatures found);
+    dkim=pass (2048-bit rsa key sha256) header.d=chase.com
+    header.i=@chase.com header.b=YbG39knJ header.a=rsa-sha256
+    header.s=d4815 x-bits=2048;
+    dmarc=pass policy.dwl=pass policy.published-domain-policy=reject
+    policy.applied-disposition=none policy.evaluated-disposition=none
+    (p=reject,d=none,d.eval=none) policy.policy-from=p
+    header.from=chase.com;
+    iprev=pass smtp.remote-ip=159.53.49.232 (shvf23.jpmchase.com);
+    spf=pass smtp.mailfrom=no.reply.alerts.15@chase.com
+    smtp.helo=shvf23.jpmchase.com
+X-ME-Authentication-Results: mx3.messagingengine.com;
+    x-aligned-from=domain_pass (Domain match);
+    x-return-mx=pass header.domain=chase.com policy.is_org=yes
+      (MX Records found: cluster14.us.messagelabs.com,cluster14.us.messagelabs.com,cluster14.us.messagelabs.com,cluster14a.us.messagelabs.com);
+    x-return-mx=pass smtp.domain=chase.com policy.is_org=yes
+      (MX Records found: cluster14.us.messagelabs.com,cluster14.us.messagelabs.com,cluster14a.us.messagelabs.com,cluster14.us.messagelabs.com);
+    x-tls=pass smtp.version=TLSv1.2 smtp.cipher=ECDHE-RSA-AES256-GCM-SHA384
+      smtp.bits=256/256;
+    x-vs=transactional:finance score=40 state=14
+Authentication-Results: mx3.messagingengine.com;
+    x-csa=none;
+    x-me-sender=none;
+    x-ptr=pass smtp.helo=shvf23.jpmchase.com policy.ptr=shvf23.jpmchase.com
+Authentication-Results: mx3.messagingengine.com;
+    bimi=pass header.d=chase.com header.selector=default
+      policy.authority=pass
+      policy.authority-uri=https://bimi.entrust.net/chase.com/certchain.pem
+Authentication-Results: mx3.messagingengine.com;
+    arc=none (no signatures found)
+Authentication-Results: mx3.messagingengine.com;
+    dkim=pass (2048-bit rsa key sha256) header.d=chase.com
+      header.i=@chase.com header.b=YbG39knJ header.a=rsa-sha256
+      header.s=d4815 x-bits=2048;
+    dmarc=pass policy.dwl=pass policy.published-domain-policy=reject
+      policy.applied-disposition=none policy.evaluated-disposition=none
+      (p=reject,d=none,d.eval=none) policy.policy-from=p
+      header.from=chase.com;
+    iprev=pass smtp.remote-ip=159.53.49.232 (shvf23.jpmchase.com);
+    spf=pass smtp.mailfrom=no.reply.alerts.15@chase.com
+      smtp.helo=shvf23.jpmchase.com
+BIMI-Indicator: PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjwhLS0gR2VuZXJhdG
+    9yOiBBZG9iZSBJbGx1c3RyYXRvciAyNS4yLjMsIFNWRyBFeHBvcnQgUGx1Zy1JbiAuIFNW
+    RyBWZXJzaW9uOiA2LjAwIEJ1aWxkIDApICAtLT4NCjxzdmcgdmVyc2lvbj0iMS4yIiBiYX
+    NlUHJvZmlsZT0idGlueS1wcyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5
+    OTkveGxpbmsiIHZpZXdCb3g9IjAgMCA4MyA4MyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3
+    JnLzIwMDAvc3ZnIj4NCiAgPHRpdGxlPkpQTW9yZ2FuIENoYXNlIGFuZCBDby48L3RpdGxl
+    Pg0KPGc+DQoJPHBhdGggZmlsbD0iIzAwNUNCOSIgZD0iTTMyLjMsOUMzMSw5LDMwLDEwLD
+    MwLDExLjN2MTYuMWg0Mi41TDUzLjEsOUgzMi4zeiIgLz4NCgk8cGF0aCBmaWxsPSIjMDA1
+    Q0I5IiBkPSJNNzQsMzIuMmMwLTEuMy0xLTIuMy0yLjMtMi4zSDU1LjZ2NDIuNUw3NCw1My
+    4xVjMyLjJ6IiAvPg0KCTxwYXRoIGZpbGw9IiMwMDVDQjkiIGQ9Ik01MC44LDc0YzEuMyww
+    LDIuMy0xLDIuMy0yLjNWNTUuNkgxMC42TDI5LjksNzRINTAuOHoiIC8+DQoJPHBhdGggZm
+    lsbD0iIzAwNUNCOSIgZD0iTTksNTAuN0M5LDUyLDEwLDUzLDExLjMsNTNoMTYuMVYxMC41
+    TDksMjkuOVY1MC43eiIgLz4NCjwvZz4NCjwvc3ZnPg==
+BIMI-Location: v=BIMI1;
+    l=https://bimi.entrust.net/chase.com/logo.svg
+    a=https://bimi.entrust.net/chase.com/certchain.pem
+X-ME-VSCause: gggruggvucftvghtrhhoucdtuddrgedvfedruddttddgudehfecutefuodetggdotefrod
+    ftvfcurfhrohhfihhlvgemucfhrghsthforghilhdpggftfghnshhusghstghrihgsvgdp
+    uffrtefokffrpgfnqfghnecuuegrihhlohhuthemuceftddtnecundfhihhnrghntggvuc
+    dlgedtmdenucfjughrpeffhffvkffugggtgfeshhhqtgdttddtjeenucfhrhhomhepvehh
+    rghsvgcuoehnohdrrhgvphhlhidrrghlvghrthhssegthhgrshgvrdgtohhmqeenucggtf
+    frrghtthgvrhhnpefhtddtledtffeigfehtddvjeetfedtieekvdefieejgfefhfekuefg
+    jeevtefhueenucffohhmrghinheptghhrghsvgdrtghomhenucfkphepudehledrheefrd
+    egledrvdefvddpudegjedruddtjedrudegkedrudeknecuvehluhhsthgvrhfuihiivgep
+    vdenucfrrghrrghmpehinhgvthepudehledrheefrdegledrvdefvddphhgvlhhopehshh
+    hvfhdvfedrjhhpmhgthhgrshgvrdgtohhmpdhmrghilhhfrhhomhepoehnohdrrhgvphhl
+    hidrrghlvghrthhsrdduheestghhrghsvgdrtghomheq
+X-ME-VSScore: 40
+X-ME-VSCategory: transactional:finance
+X-ME-CSA: none
+Received-SPF: pass
+    (chase.com: 159.53.49.232 is authorized to use 'no.reply.alerts.15@chase.com' in 'mfrom' identity (mechanism 'a:spf.jpmchase.com' matched))
+    receiver=mx3.messagingengine.com;
+    identity=mailfrom;
+    envelope-from="no.reply.alerts.15@chase.com";
+    helo=shvf23.jpmchase.com;
+    client-ip=159.53.49.232
+Received: from shvf23.jpmchase.com (shvf23.jpmchase.com [159.53.49.232])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by mx3.messagingengine.com (Postfix) with ESMTPS
+	for <hello@ezeanyinabia.com>; Sun,  5 Jun 2022 16:44:57 -0400 (EDT)
+Received: from pps.filterd (shvf23.dmz.us.jpmchase.net [127.0.0.1])
+	by shvf23.jpmchase.com (8.16.0.43/8.16.0.43) with SMTP id 255KiP1p104268
+	for <hello@ezeanyinabia.com>; Sun, 5 Jun 2022 20:44:56 GMT
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=chase.com; h=date : from : to :
+ message-id : subject : mime-version : content-type :
+ content-transfer-encoding; s=d4815;
+ bh=xhiYL2xVVrojujqUWIwLxtxOWwcLGuQ7KvgIZ6GIHrQ=;
+ b=YbG39knJAJb3TGSXCbrFIijwub+rdauI3h9uQgRleTV2wa3Gjynoqv1osGw5ouEhqf3j
+ sXdjM0FlFzXlcAwykGZula4fLRdExHUdn6T73ZUoepi+nV1Qgq3TQSp07DQvgq65TdoG
+ IJ3ShSL2ycXttX9ZYSnfewc5jlA5jU1LODjOPsryGWETELLeXdLfmCQLenlmD0eV6TVW
+ bV4sqvMBUOS6U8YyL5dqG22a0ar/Q7dDJLIb5LSe36kHE1SG3NumI5EZeuc5P4nSalBg
+ 0+UEGrXrahY5q7qHtsOuH5g8Po+ygkaKmGG0qqDrt9nZcSk0J3hAAqpmFPdDtkpnucTg vA== 
+Received: from vsin25p9756.svr.us.jpmchase.net ([169.125.98.14])
+	by shvf23.dmz.us.jpmchase.net with ESMTP id 3gg0kbvdx5-1
+	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT)
+	for <hello@ezeanyinabia.com>; Sun, 05 Jun 2022 20:44:56 +0000
+Received: from iaasn00033628.svr.us.jpmchase.net (iaasn00033628.svr.us.jpmchase.net [147.107.148.18])       by vsin25p9756.svr.us.jpmchase.net  with ESMTP id 255KiuXL018150       for <hello@ezeanyinabia.com>; Sun, 5 Jun 2022 20:44:56 GMT
+Date: Sun, 5 Jun 2022 16:44:56 -0400 (EDT)
+From: Chase <no.reply.alerts@chase.com>
+To: hello@ezeanyinabia.com
+Message-ID: <681262827.3106498.1654461896237.JavaMail.webuser@iaasn00033628.svr.us.jpmchase.net>
+Subject: Your $63.83 transaction with ANMOL INDIAN RESTAUR
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+NOTIFICATION-ID: CREDIT_REALTIME_AUTH-7a517854a250a9b40ae7ef40a3c640e08bb500c0dfbf3ac50f8048a35461f0ff-3-5bc34de2-f8ad-3f7f-99f8-3a55f05e5211
+RETRY-COUNT: 0
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.=
+w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns=3D"http://www.w3.org/1999/xhtml" lang=3D"en">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8" />
+<meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=3D1.=
+0"/>
+<title>This transaction is above the level you set, see more here.</title>
+<style type=3D"text/css">
+* {
+=09line-height: normal !important;
+}
+strong {
+=09font-weight: bold !important;
+}
+em {
+=09font-style: italic !important;
+}
+body {
+=09background-color: #d7dbe0 !important;
+=09-webkit-text-size-adjust: none !important;
+}
+.ExternalClass * {
+=09line-height: 112%
+}
+.ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass =
+td {
+=09line-height: 112%
+}
+td {
+=09-webkit-text-size-adjust: none;
+}
+a[href^=3Dtel] {
+=09color: inherit;
+=09text-decoration: none;
+}
+.applelinksgray41 a {
+=09color: #414042 !important;
+=09text-decoration: none;
+}
+.applelinksgray a {
+=09color: #717171 !important;
+=09text-decoration: none;
+}
+.wordBreak {
+=09overflow-wrap: break-word;
+=09word-wrap: break-word;
+=09word-break: break-all;
+=09word-break: break-word;
+}
+
+@media screen and (max-width: 800px) {
+.fullWidth {
+=09width: 100% !important;
+=09min-width: 100% !important;
+=09margin-left: auto !important;
+=09margin-right: auto !important;
+=09padding: 0px !important;
+=09text-align: center !important;
+}
+.moPad {
+=09padding-right: 20px !important;
+=09padding-left: 20px !important;
+}
+.zeroPad {
+=09padding-right: 0px !important;
+=09padding-left: 0px !important;
+}
+.font14 {
+=09font-size: 14px !important;
+}
+}
+
+@media print and (max-width: 800px) {
+.fullWidth {
+=09width: 100% !important;
+=09min-width: 100% !important;
+=09margin-left: auto !important;
+=09margin-right: auto !important;
+=09padding: 0px !important;
+=09text-align: center !important;
+}
+.moPad {
+=09padding-right: 20px !important;
+=09padding-left: 20px !important;
+}
+.zeroPad {
+=09padding-right: 0px !important;
+=09padding-left: 0px !important;
+}
+.font14 {
+=09font-size: 14px !important;
+}
+}
+</style>
+</head>
+<body style=3D"padding: 0px;margin: 0px; background-color:#d7dbe0;">
+<table role=3D"presentation" align=3D"center" width=3D"100%" border=3D"0" c=
+ellspacing=3D"0" cellpadding=3D"0" style=3D"min-width:800px; background-col=
+or:#d7dbe0;" class=3D"fullWidth">
+  <tr>
+    <td align=3D"center" style=3D"vertical-align:top; padding:0px 0px 20px =
+0px; min-width:800px; background-color:#d7dbe0;" class=3D"fullWidth"><table=
+ role=3D"presentation" align=3D"center" width=3D"800" cellpadding=3D"0" cel=
+lspacing=3D"0" border=3D"0" class=3D"fullWidth" style=3D"background-color:#=
+FFFFFF;">
+        <!-- Start of Content -->
+        <tr>
+          <td align=3D"center" style=3D"vertical-align:top; padding: 23px 0=
+px 0px;background-color: #005EB8;"><table role=3D"presentation" cellpadding=
+=3D"0" cellspacing=3D"0" border=3D"0">
+              <tr>
+                <td align=3D"right" style=3D"vertical-align:bottom; padding=
+:0px 0px; width:12px;"><img src=3D"https://www.chase.com/content/dam/email/=
+images/blue-left.jpg" width=3D"12" height=3D"226" border=3D"0" style=3D"dis=
+play:block;" alt=3D""/></td>
+                <td align=3D"center" style=3D"vertical-align:bottom; paddin=
+g: 0px 0px 0px;width:616px; background-color: #FFFFFF;"><table role=3D"pres=
+entation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                    <tr>
+                      <td align=3D"left" style=3D"vertical-align:top; paddi=
+ng: 0px 0px;"><table role=3D"presentation" width=3D"100%" cellpadding=3D"0"=
+ cellspacing=3D"0" border=3D"0">
+                          <!-- Start hidden preview text -->
+                          <div style=3D"display: none; max-height: 0px; ove=
+rflow: hidden;">This transaction is above the level you set, see more here.=
+</div>
+
+                          <!-- Insert &zwnj;&nbsp; after hidden preview tex=
+t -->
+
+                          <div style=3D"display: none; max-height: 0px; ove=
+rflow: hidden;"> &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn=
+j;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&=
+nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn=
+j;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&=
+nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbs=
+p;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&=
+zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn=
+j;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&=
+nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbs=
+p;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&=
+zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&nbsp;&zwnj;&nbs=
+p;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&=
+zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn=
+j;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&=
+nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbs=
+p;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&=
+zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwn=
+j;&nbsp;</div>
+                          <!-- End hidden preview text -->
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+padding-left: 30px;" class=3D"moPad"><table role=3D"presentation" width=3D"=
+100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:bottom; padding:36px 0px 20px;"><img src=3D"https://www.chase.com/content=
+/dam/email/images/chase-logo-h-rgb.png" width=3D"104" height=3D"20" border=
+=3D"0" style=3D"display:block;" alt=3D"Chase Logo"/></td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding: 20px 28px 0px;" class=3D"moPad"><table role=3D"presentation" alig=
+n=3D"left" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top;"><table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cells=
+pacing=3D"0" border=3D"0">
+                                      <tr>
+                                        <td align=3D"left" style=3D"vertica=
+l-align:top; padding:5px 10px; font-family:Arial, Helvetica, sans-serif; fo=
+nt-size:12px; font-weight:bold; color:#414042; background-color:#D7DBE0; bo=
+rder-radius:20px; -moz-border-radius: 20px; -webkit-border-radius:20px; whi=
+te-space: nowrap;" class=3D"font14">Transaction alert</td>
+                                      </tr>
+                                    </table></td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+"><table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=
+=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding: 20px 30px 28px;" class=3D"moPad"><table role=3D"presentatio=
+n" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                      <tr>
+                                        <td align=3D"left" style=3D"vertica=
+l-align:top; padding: 0px 20px 0px 0px;"><img src=3D"https://static.chasecd=
+n.com/content/services/rendition/image.small.png/unified-assets/digital-car=
+ds/chase-freedom/41473217017.png" width=3D"57" height=3D"auto" alt=3D"" bor=
+der=3D"0" style=3D"display:block;"/></td>
+                                        <td align=3D"left" style=3D"vertica=
+l-align:top; padding:0px 50px 0px 0px; font-family:Arial, Helvetica, sans-s=
+erif; font-size:30px; font-weight: bold; color:#414042;" class=3D"zeroPad">=
+You made a $63.83 transaction</td>
+                                      </tr>
+                                    </table></td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                        </table></td>
+                    </tr>
+                  </table></td>
+                <td align=3D"left" style=3D"vertical-align:bottom; padding:=
+0px 0px;width:12px; "><img src=3D"https://www.chase.com/content/dam/email/i=
+mages/blue-right.jpg" width=3D"12" height=3D"226" border=3D"0" style=3D"dis=
+play:block;" alt=3D""/></td>
+              </tr>
+            </table></td>
+        </tr>
+        <tr>
+          <td align=3D"center" style=3D"vertical-align:top; padding: 0px 0p=
+x 0px; background-color: #FFFFFF;"><table role=3D"presentation" cellpadding=
+=3D"0" cellspacing=3D"0" border=3D"0">
+              <tr>
+                <td align=3D"right" style=3D"vertical-align:top; padding:0p=
+x 0px; width:12px;"><img src=3D"https://www.chase.com/content/dam/email/ima=
+ges/white-left.jpg" width=3D"12" height=3D"77" border=3D"0" style=3D"displa=
+y:block;" alt=3D""/></td>
+                <td align=3D"center" style=3D"vertical-align:top; padding: =
+0px 0px 0px;width:616px;"><table role=3D"presentation" width=3D"100%" cellp=
+adding=3D"0" cellspacing=3D"0" border=3D"0">
+                    <tr>
+                      <td align=3D"left" style=3D"vertical-align:top; paddi=
+ng: 0px 150px 0px 30px;" class=3D"moPad"><table role=3D"presentation" width=
+=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding: 10px 0px;border-bottom: solid 1px #414042;"><table role=3D"presen=
+tation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding:0px 0px 0px 0px; font-family:Arial, Helvetica, sans-serif; f=
+ont-size:16px; color:#414042;" class=3D"font14">Account</td>
+                                  <td align=3D"right" style=3D"vertical-ali=
+gn:top; padding:0px 0px 0px 5px; font-family:Arial, Helvetica, sans-serif; =
+font-size:16px; font-weight:bold; color:#414042;" class=3D"font14">Chase Fr=
+eedom Unlimited (...8394)</td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding: 10px 0px;border-bottom: solid 1px #414042;"><table role=3D"presen=
+tation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding:0px 0px 0px 0px; font-family:Arial, Helvetica, sans-serif; f=
+ont-size:16px; color:#414042;" class=3D"font14">Date</td>
+                                  <td align=3D"right" style=3D"vertical-ali=
+gn:top; padding:0px 0px 0px 5px; font-family:Arial, Helvetica, sans-serif; =
+font-size:16px; font-weight:bold; color:#414042;" class=3D"font14"><span cl=
+ass=3D"applelinksgray41"><a style=3D"color:#414042;text-decoration: none;">=
+Jun 5, 2022 at 4:44 PM ET</td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding: 10px 0px;border-bottom: solid 1px #414042;"><table role=3D"presen=
+tation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding:0px 0px 0px 0px; font-family:Arial, Helvetica, sans-serif; f=
+ont-size:16px; color:#414042;" class=3D"font14">Merchant</td>
+                                  <td align=3D"right" style=3D"vertical-ali=
+gn:top; padding:0px 0px 0px 5px; font-family:Arial, Helvetica, sans-serif; =
+font-size:16px; font-weight:bold; color:#414042;" class=3D"font14">ANMOL IN=
+DIAN RESTAUR</td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding: 10px 0px;border-bottom: solid 1px #414042;"><table role=3D"presen=
+tation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                                <tr>
+                                  <td align=3D"left" style=3D"vertical-alig=
+n:top; padding:0px 0px 0px 0px; font-family:Arial, Helvetica, sans-serif; f=
+ont-size:16px; color:#414042;" class=3D"font14">Amount</td>
+                                  <td align=3D"right" style=3D"vertical-ali=
+gn:top; padding:0px 0px 0px 5px; font-family:Arial, Helvetica, sans-serif; =
+font-size:16px; font-weight:bold; color:#414042;" class=3D"font14">$63.83</=
+td>
+                                </tr>
+                              </table></td>
+                          </tr>
+                        </table></td>
+                    </tr>
+                    <tr>
+                        <td align=3D"left" style=3D"vertical-align:top; pad=
+ding:40px 150px 40px 30px; font-family:Arial, Helvetica, sans-serif; font-s=
+ize:16px; color:#414042;" class=3D"moPad">You are receiving this alert beca=
+use your transaction was more than the $0.00 level you set. You can visit o=
+ur <a style=3D"text-decoration: underline; color:#0060F0;" href=3D"https://=
+www.chase.com/personal/credit-cards/card-resource-center" rel=3D"noopener n=
+oreferrer"  target=3D"_blank">Resource Center</a> anytime to help answer yo=
+ur questions or manage your account.</td>
+                    </tr>
+                    <tr>
+                      <td align=3D"left" style=3D"padding:0px; vertical-ali=
+gn:top; padding: 0px 0px 30px 30px;" class=3D"moPad"><table role=3D"present=
+ation" align=3D"left" cellpadding=3D"0" cellspacing=3D"0" border=3D"0" styl=
+e=3D"vertical-align:top;">
+                          <tr>
+                            <td role=3D"button" align=3D"center" style=3D"b=
+ackground-color:#0060f0; color: #fffffe; font-size: 16px; font-family: Aria=
+l, Helvetica, sans-serif; padding: 10px 0px; border: 1px solid #0060f0; ver=
+tical-align:top; border-radius:4px; -moz-border-radius: 4px; -webkit-border=
+-radius:4px;width: 168px;"><a href=3D"https://secure.chase.com/web/auth/nav=
+?navKey=3DrequestDashboard" target=3D"_blank" style=3D"color: #fffffe; text=
+-decoration:none;">Review account</a></td>
+                          </tr>
+                        </table></td>
+                    </tr>
+                    <tr>
+                      <td align=3D"left" style=3D"vertical-align:top; paddi=
+ng:0px 30px 20px; font-family:Arial, Helvetica, sans-serif; font-size:12px;=
+ color:#717171;" class=3D"moPad font14">Securely access your accounts with =
+the <a style=3D"text-decoration: underline; color:#0060F0;" href=3D"https:/=
+/www.chase.com/digital/mobile-banking" rel=3D"noopener noreferrer"  target=
+=3D"_blank">Chase&nbsp;Mobile<span style=3D"font-size:70%; line-height:0; v=
+ertical-align:3px; text-decoration: none;">&reg;</span> app</a> or <a style=
+=3D"text-decoration: underline; color:#0060F0;" href=3D"https://secure.chas=
+e.com/web/auth/nav?navKey=3DrequestDashboard" rel=3D"noopener noreferrer"  =
+target=3D"_blank">chase.com</a>. </td>
+                    </tr>
+                    <tr>
+                      <td align=3D"left" style=3D"vertical-align:top; paddi=
+ng: 0px 0px; background-color: #F6F6F6;"><table role=3D"presentation" width=
+=3D"100%" cellpadding=3D"0" cellspacing=3D"0" border=3D"0">
+                          <tr>
+                            <td align=3D"left" style=3D"vertical-align:top;=
+ padding:20px 30px 60px; font-family:Arial, Helvetica, sans-serif; font-siz=
+e:12px; color:#717171;" class=3D"moPad font14"><span role=3D"heading" style=
+=3D"text-transform: uppercase; font-weight: bold;">About this message</span=
+><br />
+                              <br />
+                              Chase&nbsp;Mobile<span style=3D"font-size:70%=
+; line-height:0; vertical-align:3px;">&reg;</span>=C2=A0app is available  f=
+or select mobile devices. Message and data rates may apply.<br />
+                              <br />
+                              This service email was sent based on your ale=
+rt settings. Use the Chase&nbsp;Mobile app or visit <a href=3D"https://www.=
+chase.com/personal/mobile-online-banking/login-alerts" target=3D"_blank" st=
+yle=3D"text-decoration: underline; color:#0060F0;" rel=3D"noopener noreferr=
+er">chase.com/alerts</a> to view or manage your settings.<br />
+                              <br />
+                              Chase cannot guarantee the delivery of alerts=
+ and notifications.=C2=A0Wireless or internet service provider outages or o=
+ther circumstances could delay them. You can always check <span class=3D"ap=
+plelinksgray"><a style=3D"color:#717171;text-decoration: none;">chase.com</=
+a></span> or the Chase&nbsp;Mobile=C2=A0app for the status of your accounts=
+ including your latest account balances and transaction details.=C2=A0<br /=
+>
+                              <br />
+                              To protect your personal information, please =
+don't reply to this message. Chase won't ask for confidential information i=
+n an email. <br />
+                              <br />
+                              If you have concerns about the authenticity o=
+f this message or have questions about your account visit <a style=3D"text-=
+decoration: underline; color:#0060F0;" href=3D"https://www.chase.com/digita=
+l/customer-service" target=3D"_blank" rel=3D"noopener noreferrer">chase.com=
+/CustomerService</a> for ways to contact us.<br />
+                              <br />
+                              Your privacy is important to us. See our onli=
+ne <a style=3D"text-decoration: underline; color:#0060F0;" href=3D"https://=
+www.chase.com/digital/resources/privacy-security" target=3D"_blank" rel=3D"=
+noopener noreferrer">Security Center</a> to learn how to protect your infor=
+mation.<br />
+                              <br />
+                              &copy; 2022 JPMorgan Chase &amp; Co. </td>
+                          </tr>
+                        </table></td>
+                    </tr>
+                  </table></td>
+                <td align=3D"left" style=3D"vertical-align:top; padding:0px=
+ 0px; width:12px;"><img src=3D"https://www.chase.com/content/dam/email/imag=
+es/white-right.jpg" width=3D"12" height=3D"77" border=3D"0" style=3D"displa=
+y:block;" alt=3D""/></td>
+              </tr>
+            </table></td>
+        </tr>
+        <!--End of Content -->
+       =20
+      </table></td>
+  </tr>
+</table>
+</body>
+</html>

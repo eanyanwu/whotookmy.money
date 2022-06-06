@@ -1,0 +1,6 @@
+target/
+release/
+build/
+.env
+.password
+*.db

@@ -1,0 +1,21 @@
+- name: Ensure deploy group is present
+  group:
+    name: deploy
+    state: present
+- name: Ensure deploy group has sudo priviledges
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: "^%deploy"
+    line: "%deploy  ALL=(ALL:ALL) ALL"
+    validate: "/usr/sbin/visudo -cf %s"
+- name: Install the sudo package
+  package:
+    name: sudo
+    state: latest
+- name: Create the non-root user account
+  user:
+    name: "{{ username }}"
+    password: "{{ password }}"
+    shell: /bin/bash
+    groups: deploy

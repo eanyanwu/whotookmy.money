@@ -1,0 +1,17 @@
+[Unit]
+PartOf={{ application_name }}.target
+StopWhenUnneeded=yes
+
+[Service]
+WorkingDirectory=%h/{{ application_folder }}/
+ExecStart=%h/{{ application_folder }}/wtmm_courier
+Environment="POSTMARK_API_TOKEN={{ postmark_api_token }}"
+Environment="EMAIL_DOMAIN={{ email_domain }}"
+Environment="RUST_LOG=info"
+Restart=always
+RestartSec=14s
+StandardInput=null
+StandardOutput=journal
+StandardError=inherit
+KillMode=mixed
+TimeoutStopSec=5

@@ -1,0 +1,19 @@
+- name: (CERTBOT) install
+  community.general.snap:
+    classic: yes
+    name: certbot
+- name: (CERBOT) link to /usr/bin
+  ansible.builtin.file:
+    src: /snap/bin/certbot
+    path:  /usr/bin/cerbot
+    state: link
+- name: (CERTBOT) install ssl certificate
+  ansible.builtin.command: >
+   certbot --nginx
+   --non-interactive
+   --domain whotookmy.money
+   --domain dev.whotookmy.money
+   --agree-tos
+   --keep-until-expiring
+   --expand
+   -m hello@ezeanyinabia.com

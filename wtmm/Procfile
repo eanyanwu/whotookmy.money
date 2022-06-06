@@ -1,0 +1,2 @@
+wtmm_daemon: cargo run --quiet --bin wtmm_daemon
+wtmm_courier: cargo run  --quiet --bin wtmm_courier

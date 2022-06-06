@@ -1,0 +1,34 @@
+- name: (NGINX) install prerequisites
+  ansible.builtin.apt:
+    name: [ 'apt-transport-https', 'ca-certificates', 'gpg-agent', 'logrotate' ]
+    update_cache: true
+    state: latest
+  when: ansible_facts['os_family'] == "Debian"
+- name: (NGINX) install
+  ansible.builtin.apt:
+    name: nginx
+    state:  present
+- name: (NGINX) config
+  ansible.builtin.copy:
+    src: nginx.conf
+    dest: /etc/nginx/
+    mode: 0644
+- name: (NGINX) systemd daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+- name: (NGINX) reload config
+  ansible.builtin.service:
+    name: nginx
+    state: reloaded
+    enabled: true
+- name: (NGINX) print config check
+  ansible.builtin.command:
+    cmd: nginx -t
+    chdir: /etc/nginx
+  ignore_errors: true
+  register: config_check
+- name: (NGINX) config check
+  ansible.builtin.assert:
+    that: config_check.rc == 0
+- name: (NGINX) run logrotate
+  ansible.builtin.command: logrotate -f /etc/logrotate.d/nginx

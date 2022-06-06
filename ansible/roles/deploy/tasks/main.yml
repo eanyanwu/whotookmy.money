@@ -1,0 +1,35 @@
+- name: ensure application folder exists 
+  ansible.builtin.file:
+    path: "{{ application_folder }}"
+    state: directory
+    mode: 0755
+- name: Ensure user lingering enabled
+  command:
+    cmd: "loginctl enable-linger {{ ansible_user }}"
+    creates: ~/user-lingering
+- name: copy binaries
+  ansible.builtin.copy:
+    src: bin/
+    dest: "{{ application_folder }}"
+    mode: 0755
+- name: copy service files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0664
+  with_items:
+    - dest: "~/.config/systemd/user/{{ application_name }}_daemon.service"
+      src: wtmm_daemon.service
+    - dest: "~/.config/systemd/user/{{ application_name }}_courier.service"
+      src: wtmm_courier.service
+    - dest: "~/.config/systemd/user/{{ application_name }}_reporter.service"
+      src: wtmm_reporter.service
+    - dest: "~/.config/systemd/user/{{ application_name }}.target"
+      src: wtmm.target
+- name: start binaries
+  systemd:
+    daemon_reload: true
+    name: "{{ application_name }}.target"
+    enabled: yes
+    state: restarted
+    scope: user
