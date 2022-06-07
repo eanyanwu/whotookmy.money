@@ -11,16 +11,16 @@ use wtmm::purchase::Purchase;
 use wtmm::store::Store;
 
 fn route_email(email: PostmarkInboundEmail) -> Result<(), Box<dyn error::Error>> {
-    let email = Email::try_from(email.raw_email)?;
+    let parsed = Email::try_from(email.raw_email.as_str())?;
     let mut c = db::get_connection()?;
     db::init(&mut c)?;
     let store = Store::from(c);
 
-    if matches!(email.get_body(), Some(b) if b.contains(&get_bank_alert_email())) {
-        let purchase = Purchase::try_from(&email)?;
+    if email.raw_email.contains(&get_bank_alert_email()) {
+        let purchase = Purchase::try_from(&parsed)?;
         store.save_purchase(&purchase)?;
     } else {
-        return Err(format!("no route registered for email: {}", email.get_to()).into());
+        return Err(format!("no route registered for email: {}", parsed.get_to()).into());
     }
 
     Ok(())
