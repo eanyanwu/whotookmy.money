@@ -178,10 +178,10 @@ impl Email {
 ///
 /// The conversion will fail if we are unable to parse any of the required headers
 /// of if a text/html subpart was not properly formatted
-impl TryFrom<String> for Email {
+impl TryFrom<&str> for Email {
     type Error = EmailError;
 
-    fn try_from(input: String) -> Result<Self, Self::Error> {
+    fn try_from(input: &str) -> Result<Self, Self::Error> {
         let parsed = mailparse::parse_mail(input.as_bytes())?;
         let headers = parsed.get_headers();
 
@@ -350,7 +350,7 @@ mod test {
             "--frontier--"
         );
 
-        let email = Email::try_from(mime.to_string()).unwrap();
+        let email = Email::try_from(mime).unwrap();
 
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
@@ -371,7 +371,7 @@ mod test {
             "--frontier--"
         );
 
-        let email = Email::try_from(mime.to_string()).unwrap();
+        let email = Email::try_from(mime).unwrap();
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
         assert_eq!(email.get_date(), 1654024992);
@@ -388,7 +388,7 @@ mod test {
             "--frontier--"
         );
 
-        let email = Email::try_from(mime.to_string()).unwrap();
+        let email = Email::try_from(mime).unwrap();
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
         assert_eq!(email.get_date(), 1654024992);
@@ -404,7 +404,7 @@ mod test {
             "MSG1\n",
         );
 
-        let email = Email::try_from(mime.to_string()).unwrap();
+        let email = Email::try_from(mime).unwrap();
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
     }

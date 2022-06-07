@@ -206,7 +206,7 @@ mod test {
     #[test]
     fn test_parse_real_chase_email() {
         let mime = fs::read_to_string("./test_assets/chase_alert").unwrap();
-        let email = Email::try_from(mime).unwrap();
+        let email = Email::try_from(mime.as_str()).unwrap();
         let purchase = Purchase::try_from(&email).unwrap();
 
         assert_eq!(purchase.get_amount_in_cents(), 6383);
@@ -217,7 +217,7 @@ mod test {
     #[test]
     fn test_parse_real_schwab_email() {
         let mime = fs::read_to_string("./test_assets/schwab_alert").unwrap();
-        let email = Email::try_from(mime).unwrap();
+        let email = Email::try_from(mime.as_str()).unwrap();
         let purchase = Purchase::try_from(&email).unwrap();
 
         assert_eq!(purchase.get_amount_in_cents(), 999);
