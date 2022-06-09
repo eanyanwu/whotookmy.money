@@ -98,7 +98,6 @@ impl TryFrom<&Email> for Purchase {
         let amount;
         let merchant;
 
-        println!("{:?}", lines);
         if from == CHASE_ALERT_EMAIL {
             merchant = lines
                 .iter()
