@@ -2,9 +2,10 @@ use crate::db::RowId;
 use crate::outbound_email::OutboundEmail;
 use crate::purchase::Purchase;
 use crate::report::{PurchaseDigest, Report, ReportDefinition};
+use crate::user::User;
 use chrono::Utc;
 use rusqlite::{named_params, params, Connection};
-use std::sync::Arc;
+use std::rc::Rc;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -20,29 +21,43 @@ pub enum StoreError {
 /// vice-versa
 #[derive(Clone)]
 pub struct Store {
-    database: Arc<Connection>,
+    database: Rc<Connection>,
 }
 
 impl From<Connection> for Store {
     /// Create a Store object from a rusqlite Connection
     fn from(input: Connection) -> Self {
         Self {
-            database: Arc::new(input),
+            database: Rc::new(input),
         }
+    }
+}
+
+impl From<Rc<Connection>> for Store {
+    /// Create a Store object from a reference counted pointer to a
+    /// rusqlite connection
+    fn from(input: Rc<Connection>) -> Self {
+        Self { database: input }
+    }
+}
+
+impl AsRef<Store> for Store {
+    fn as_ref(&self) -> &Self {
+        self
     }
 }
 
 impl Store {
     /// Returns an owned handle to the database connection. Useful for testing
-    pub fn handle(&self) -> Arc<Connection> {
+    pub fn handle(&self) -> Rc<Connection> {
         self.database.clone()
     }
 
-    /// Creates a new user with the given email. Automatically set them up with
-    /// a purchase digest report
+    /// Creates a new user with the given email if one does not exist.
+    /// Automatically set them up with a purchase digest report
     ///
     /// This function is idempotent
-    pub fn ensure_user_created(&self, email: &str) -> Result<RowId, StoreError> {
+    pub fn get_or_create_user(&self, email: &str) -> Result<(RowId, User), StoreError> {
         let c = &self.database;
 
         c.execute(
@@ -54,13 +69,18 @@ impl Store {
         .map_err(|e| StoreError::DatabaseError("inserting user", e))?;
 
         // safe unwrap as we just created the user
-        let user_id = c
+        let (user_id, user) = c
             .query_row(
-                "SELECT user_id
+                "SELECT user_id, user_email, tz_offset
             FROM user
             WHERE user_email = ?",
                 [email],
-                |r| r.get::<_, RowId>(0),
+                |r| {
+                    let user_id = r.get::<_, RowId>(0)?;
+                    let user_email = r.get::<_, String>(1)?;
+                    let tz_offset = r.get::<_, i32>(2)?;
+                    Ok((user_id, User::new(&user_email, tz_offset)))
+                },
             )
             .unwrap();
 
@@ -72,13 +92,27 @@ impl Store {
         )
         .map_err(|e| StoreError::DatabaseError("inserting user report", e))?;
 
-        Ok(user_id)
+        Ok((user_id, user))
+    }
+
+    /// Sets the user's timezone offset
+    ///
+    /// This function is idempotent
+    pub fn set_user_tz_offset(&self, user_id: RowId, tz_offset: i32) {
+        let c = &self.database;
+
+        c.execute(
+            "UPDATE user
+            SET tz_offset = ? WHERE user_id = ?",
+            params![tz_offset, user_id],
+        )
+        .ok();
     }
 
     /// Save a purchase
     pub fn save_purchase(&self, p: &Purchase) -> Result<RowId, StoreError> {
         let c = &self.database;
-        let user_id = self.ensure_user_created(p.get_user_email())?;
+        let (user_id, _) = self.get_or_create_user(p.get_user_email())?;
 
         let mut stmt = c
             .prepare(
@@ -156,7 +190,7 @@ impl Store {
     pub fn queue_email(&self, e: &OutboundEmail) -> Result<RowId, StoreError> {
         let c = &self.database;
 
-        let user_id = self.ensure_user_created(e.get_to())?;
+        let (user_id, _) = self.get_or_create_user(e.get_to())?;
 
         let count_unsent = c
             .query_row(
@@ -351,6 +385,36 @@ mod test {
         let mut db = rusqlite::Connection::open(":memory:").unwrap();
         db::init(&mut db).unwrap();
         Store::from(db)
+    }
+
+    #[test]
+    fn test_set_tz_offset() {
+        let store = setup();
+        let c = store.handle();
+
+        c.execute_batch(
+            "INSERT INTO user (user_email)
+            VALUES ('person@example.org');",
+        )
+        .unwrap();
+
+        let default_offset = c
+            .query_row("SELECT tz_offset FROM user WHERE user_id = 1", [], |r| {
+                r.get::<_, i32>(0)
+            })
+            .unwrap();
+
+        assert_eq!(default_offset, 0);
+
+        store.set_user_tz_offset(1, 60);
+
+        let offset = c
+            .query_row("SELECT tz_offset FROM user WHERE user_id = 1", [], |r| {
+                r.get::<_, i32>(0)
+            })
+            .unwrap();
+
+        assert_eq!(offset, 60);
     }
 
     #[test]

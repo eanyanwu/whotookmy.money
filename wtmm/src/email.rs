@@ -1,3 +1,4 @@
+use chrono::DateTime;
 use mailparse::{addrparse_header, MailAddr, MailHeader, MailHeaderMap};
 use serde::Deserialize;
 use std::env;
@@ -45,27 +46,51 @@ pub struct PostmarkInboundEmail {
 pub enum EmailError {
     #[error("error parsing email")]
     ParsingError(#[from] Option<mailparse::MailParseError>),
+    #[error("invalid date")]
+    InvalidRfc2822Date,
 }
 
 /// Internal email representation
 pub struct Email {
     to: String,
     from: String,
-    date: i64,
+    rfc2822_date: String,
     html_body_stripped: Option<String>,
     text_body: Option<String>,
+    message_id: Option<String>,
 }
 
 impl Email {
+    fn validate_and_normalize_rfc2822_date(d: &str) -> Option<String> {
+        // Some emails might contain a trailing timezone indicator in parens (e.g. EST)
+        // This doesn't conform to the standard at worst, and is obsolete at best.
+        // Chop of that part and valide the rest
+        let mut d = d;
+        if let Some(idx) = d.find('(') {
+            d = &d[..idx - 1];
+        }
+
+        if let Ok(_) = DateTime::parse_from_rfc2822(d) {
+            Some(String::from(d))
+        } else {
+            None
+        }
+    }
+
     /// Creates an Email object. `body` is assumed to be plain text
-    pub fn new(to: &str, from: &str, date: i64, body: &str) -> Self {
-        Self {
+    pub fn new(to: &str, from: &str, rfc2822_date: &str, body: &str) -> Result<Self, EmailError> {
+        // Emails might additionally contains the obsolete timezone within parens. Disregard it
+        let rfc2822_date = Email::validate_and_normalize_rfc2822_date(rfc2822_date)
+            .ok_or_else(|| EmailError::InvalidRfc2822Date)?;
+        // Validate the date
+        Ok(Self {
             to: to.to_string(),
             from: from.to_string(),
-            date,
+            rfc2822_date: rfc2822_date.to_string(),
             html_body_stripped: None,
             text_body: Some(body.to_string()),
-        }
+            message_id: None,
+        })
     }
 
     /// Returns the content html content of the email, stripped of tags.
@@ -88,9 +113,30 @@ impl Email {
         self.from.as_str()
     }
 
-    /// Returns the unix timestamp at which the email was sent
-    pub fn get_date(&self) -> i64 {
-        self.date
+    /// Attempts to parse and convert the rfc2822_date to a unix timestamp
+    pub fn get_timestamp(&self) -> Result<i64, EmailError> {
+        mailparse::dateparse(&self.rfc2822_date).map_err(|e| {
+            tracing::error!("could not parse Date: from header");
+            EmailError::ParsingError(Some(e))
+        })
+    }
+
+    /// Returns the date as was preent in the email's date header
+    pub fn get_rfc2822_date(&self) -> &str {
+        &self.rfc2822_date
+    }
+
+    /// Get this email's timezone offset from UTC
+    pub fn get_tz_offset(&self) -> i32 {
+        // Safe to do as we validated the string on creation
+        let date = DateTime::parse_from_rfc2822(&self.rfc2822_date).unwrap();
+
+        date.offset().local_minus_utc()
+    }
+
+    /// Gets this email's message ID if it was specified
+    pub fn get_message_id(&self) -> Option<&str> {
+        self.message_id.as_deref()
     }
 
     // Extract an address list from `mailparse::MailHeader`
@@ -197,6 +243,14 @@ impl TryFrom<&str> for Email {
             tracing::error!("missing Date: header");
             EmailError::ParsingError(None)
         })?;
+        let rfc2822_date =
+            Email::validate_and_normalize_rfc2822_date(&date_str).ok_or_else(|| {
+                tracing::error!("invalid rfc2822 date header: {} ", date_str);
+                EmailError::InvalidRfc2822Date
+            })?;
+
+        // optionally parse the Message-ID
+        let msg_id = headers.get_first_value("Message-ID");
 
         let to = Email::extract_addresses(to_header)
             .map_err(|e| {
@@ -220,10 +274,6 @@ impl TryFrom<&str> for Email {
                 EmailError::ParsingError(None)
             })?
             .to_ascii_lowercase();
-        let date = mailparse::dateparse(&date_str).map_err(|e| {
-            tracing::error!("could not parse Date: from header");
-            EmailError::ParsingError(Some(e))
-        })?;
 
         let mut html_body_stripped = None;
         let mut text_body = None;
@@ -256,9 +306,10 @@ impl TryFrom<&str> for Email {
         Ok(Self {
             to,
             from,
-            date,
+            rfc2822_date,
             text_body,
             html_body_stripped,
+            message_id: msg_id,
         })
     }
 }
@@ -354,10 +405,12 @@ mod test {
 
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
-        assert_eq!(email.get_date(), 1654024992);
+        assert_eq!(email.get_timestamp().unwrap(), 1654024992);
         assert_eq!(email.get_body(), Some("MSG3\n"));
+    }
 
-        // no text/html subpart
+    #[test]
+    fn test_try_convert_email_no_html_subpart() {
         let mime = concat!(
             "MIME-Version: 1.0\n",
             "Date: Tue, 31 May 2022 15:23:12 -0400\n",
@@ -374,10 +427,12 @@ mod test {
         let email = Email::try_from(mime).unwrap();
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
-        assert_eq!(email.get_date(), 1654024992);
+        assert_eq!(email.get_timestamp().unwrap(), 1654024992);
         assert_eq!(email.get_body(), Some("MSG2\n"));
+    }
 
-        // no text/plain or text/html supbart
+    #[test]
+    fn test_try_convert_no_html_or_plain_subpart() {
         let mime = concat!(
             "MIME-Version: 1.0\n",
             "Date: Tue, 31 May 2022 15:23:12 -0400\n",
@@ -391,10 +446,12 @@ mod test {
         let email = Email::try_from(mime).unwrap();
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
-        assert_eq!(email.get_date(), 1654024992);
+        assert_eq!(email.get_timestamp().unwrap(), 1654024992);
         assert_eq!(email.get_body(), None);
+    }
 
-        // Addresses get lower-cased
+    #[test]
+    fn test_try_convert_address_is_lowercased() {
         let mime = concat!(
             "MIME-Version: 1.0\n",
             "Date: Tue, 31 May 2022 15:23:12 -0400\n",
@@ -407,5 +464,36 @@ mod test {
         let email = Email::try_from(mime).unwrap();
         assert_eq!(email.get_to(), "person1@example.org");
         assert_eq!(email.get_from(), "someone@example.org");
+    }
+
+    #[test]
+    fn test_try_convert_slightly_obsolete_date_is_normalized() {
+        let mime = concat!(
+            "MIME-Version: 1.0\n",
+            "Date: Tue, 31 May 2022 15:23:12 -0400 (EST)\n",
+            "From: Some One<someone@example.org>\n",
+            "To: Person One<person1@example.org>\n",
+            "Content-Type: text/plain\n\n",
+            "MSG1\n",
+        );
+
+        let email = Email::try_from(mime).unwrap();
+        assert_eq!(email.get_rfc2822_date(), "Tue, 31 May 2022 15:23:12 -0400")
+    }
+
+    #[test]
+    fn test_try_convert_invalid_date_causes_error() {
+        let mime = concat!(
+            "MIME-Version: 1.0\n",
+            "Date: Tue, 31 May 2022 15:23:12\n",
+            "From: Some One<someone@example.org>\n",
+            "To: Person One<person1@example.org>\n",
+            "Content-Type: text/plain\n\n",
+            "MSG1\n",
+        );
+
+        let email = Email::try_from(mime);
+
+        assert!(email.is_err())
     }
 }
