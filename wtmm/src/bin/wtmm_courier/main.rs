@@ -3,7 +3,7 @@ use std::thread;
 use std::time;
 use tracing::info;
 use tracing_subscriber;
-use wtmm::send_email::send_email;
+use wtmm::send_email;
 use wtmm::store::Store;
 use wtmm::{db, error_handling::print_error_chain};
 

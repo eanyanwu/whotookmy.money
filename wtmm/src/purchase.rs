@@ -133,7 +133,9 @@ impl TryFrom<&Email> for Purchase {
             user_email: to.to_string(),
             amount_in_cents: amount,
             merchant: merchant.to_string(),
-            timestamp: input.get_date(),
+            timestamp: input
+                .get_timestamp()
+                .map_err(|_| PurchaseError::ParsingError("Date"))?,
         })
     }
 }
@@ -146,7 +148,13 @@ mod test {
 
     #[test]
     fn test_email_from_unknown_sender() {
-        let email = Email::new("a@example.com", "b@example.com", 1, "");
+        let email = Email::new(
+            "a@example.com",
+            "b@example.com",
+            "Wed, 8 Jun 2022 12:23:38 -0400 (EDT)",
+            "",
+        )
+        .unwrap();
 
         let purchase = Purchase::try_from(&email);
 
@@ -158,9 +166,10 @@ mod test {
         let email = Email::new(
             "a@example.com",
             SCHWAB_ALERT_EMAIL,
-            1,
+            "Wed, 8 Jun 2022 12:23:38 -0400 (EDT)",
             &format!("Merchant\nAmount\nAIRBNB\n1200"),
-        );
+        )
+        .unwrap();
 
         let purchase = Purchase::try_from(&email);
 
@@ -175,15 +184,16 @@ mod test {
         let email = Email::new(
             "a@example.com",
             SCHWAB_ALERT_EMAIL,
-            1,
+            "Wed, 8 Jun 2022 12:23:38 -0400 (EDT)",
             &format!("Merchant\nAmount\nAIRBNB\n$120.00"),
-        );
+        )
+        .unwrap();
 
         let purchase = Purchase::try_from(&email).unwrap();
 
         assert_eq!(purchase.get_amount_in_cents(), 12000);
         assert_eq!(purchase.get_merchant(), "AIRBNB");
-        assert_eq!(purchase.get_timestamp(), 1);
+        assert_eq!(purchase.get_timestamp(), 1654705418);
     }
 
     #[test]
@@ -191,15 +201,16 @@ mod test {
         let email = Email::new(
             "a@example.com",
             CHASE_ALERT_EMAIL,
-            1,
+            "Wed, 8 Jun 2022 12:23:38 -0400 (EDT)",
             &format!("Merchant\nAIRBNB\nAmount\n$120.00"),
-        );
+        )
+        .unwrap();
 
         let purchase = Purchase::try_from(&email).unwrap();
 
         assert_eq!(purchase.get_amount_in_cents(), 12000);
         assert_eq!(purchase.get_merchant(), "AIRBNB");
-        assert_eq!(purchase.get_timestamp(), 1);
+        assert_eq!(purchase.get_timestamp(), 1654705418);
     }
 
     #[test]

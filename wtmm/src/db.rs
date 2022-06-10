@@ -55,7 +55,11 @@ CREATE TABLE user_report_outbound_email (
 ";
 
 pub fn init(connection: &mut Connection) -> Result<(), DatabaseError> {
-    let migrations = Migrations::new(vec![M::up(SCHEMA)]);
+    let migrations = Migrations::new(vec![
+        M::up(SCHEMA),
+        M::up("ALTER TABLE user ADD COLUMN tz_offset INTEGER NOT NULL DEFAULT 0"),
+    ]);
+
     migrations.to_latest(connection)?;
 
     connection.update_hook(Some(hooks::update));

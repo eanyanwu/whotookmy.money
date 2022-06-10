@@ -1,30 +1,12 @@
-use std::error;
 use std::str::FromStr;
 use tiny_http::{Method, Response, Server};
 use tracing::info;
 use tracing_subscriber;
 use wtmm::db;
 use wtmm::email::PostmarkInboundEmail;
-use wtmm::email::{get_bank_alert_email, Email};
 use wtmm::error_handling::print_error_chain;
-use wtmm::purchase::Purchase;
+use wtmm::route_inbound_email;
 use wtmm::store::Store;
-
-fn route_email(email: PostmarkInboundEmail) -> Result<(), Box<dyn error::Error>> {
-    let parsed = Email::try_from(email.raw_email.as_str())?;
-    let mut c = db::get_connection()?;
-    db::init(&mut c)?;
-    let store = Store::from(c);
-
-    if email.raw_email.contains(&get_bank_alert_email()) {
-        let purchase = Purchase::try_from(&parsed)?;
-        store.save_purchase(&purchase)?;
-    } else {
-        return Err(format!("no route registered for email: {}", parsed.get_to()).into());
-    }
-
-    Ok(())
-}
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -47,8 +29,12 @@ fn main() {
                     400
                 } else {
                     if let Ok(p) = serde_json::from_str::<PostmarkInboundEmail>(&buf) {
-                        if let Err(e) = route_email(p) {
-                            print_error_chain(e.as_ref());
+                        let mut c = db::get_connection().expect("could not connect to db");
+                        db::init(&mut c).expect("could not initialize connection");
+                        let store = Store::from(c);
+
+                        if let Err(e) = route_inbound_email(&p.raw_email, store) {
+                            print_error_chain(&e);
                         }
                         // Respond to valid postmark emails with a 200 regardless of outcome
                         200

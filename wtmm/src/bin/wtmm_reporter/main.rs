@@ -9,7 +9,7 @@ use tracing_subscriber;
 use uuid::Uuid;
 use wtmm::db;
 use wtmm::error_handling::print_error_chain;
-use wtmm::report_job::report_job;
+use wtmm::report_job;
 use wtmm::scheduler::JobRunner;
 use wtmm::store::Store;
 
