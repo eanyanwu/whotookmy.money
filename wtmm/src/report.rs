@@ -63,7 +63,7 @@ impl Report {
             "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
         ];
         format!(
-            "{weekday}, {day} {month} {year}",
+            "{weekday}, {day:02} {month} {year}",
             weekday = d.weekday(),
             month = months[d.month0() as usize],
             day = d.day(),
@@ -238,6 +238,8 @@ mod test {
         let ten_days_ago = Utc::now().checked_sub_signed(CDuration::days(10)).unwrap();
 
         let formatted = Report::format_date(ten_days_ago);
+
+        println!("{} {}", formatted, ten_days_ago.to_rfc2822());
 
         assert!(ten_days_ago.to_rfc2822().contains(&formatted));
     }
