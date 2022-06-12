@@ -16,11 +16,11 @@ pub fn empty_result(status: u32) -> ResponseBox {
 
 #[derive(Template)]
 #[template(path = "income_form.html")]
-struct IncomeForm {}
+struct IncomeForm { id: &'static str }
 
 pub fn income_form(match_result: UrlMatchResult, _req: &mut Request) -> ResponseBox {
     let _user_id = match_result.get_path_variables()[0];
-    let template = IncomeForm {};
+    let template = IncomeForm { id: "0123" };
     let html = template.render().unwrap();
     let html_len = html.len();
     Response::new(
