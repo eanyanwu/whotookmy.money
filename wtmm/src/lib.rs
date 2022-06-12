@@ -9,6 +9,7 @@ pub mod purchase;
 pub mod report;
 pub mod scheduler;
 pub mod store;
+pub mod url_match;
 pub mod user;
 
 use chrono::{TimeZone, Utc};
