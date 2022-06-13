@@ -2,6 +2,7 @@ pub mod currency;
 pub mod db;
 pub mod email;
 pub mod error_handling;
+pub mod gmail_forwarding_confirmation;
 pub mod hooks;
 pub mod outbound_email;
 pub mod purchase;
@@ -17,12 +18,14 @@ use askama::Template;
 use chrono::{TimeZone, Utc};
 use db::RowId;
 use email::{get_bank_alert_email, get_domain, get_income_email, Email};
+use gmail_forwarding_confirmation::GmailForwardingConfirmation;
 use outbound_email::OutboundEmail;
 use purchase::Purchase;
 use scheduler::{ScheduledJob, ScheduledJobError};
 use std::env;
 use store::{Store, StoreError};
 use thiserror::Error;
+use ureq;
 
 #[derive(Debug, Error)]
 #[error("could not send email")]
@@ -138,7 +141,8 @@ pub fn route_inbound_email<S: AsRef<Store>>(
     let msgid = parsed.get_message_id().unwrap_or("[no-message-id]");
 
     if parsed.get_to() == get_income_email() {
-        // Create a user session
+        // User emailed income@ to receive a link to the page where
+        // they can input income information
         let (_, token) = store.create_session_token(parsed.get_from()).map_err(|e| {
             tracing::error!(msgid, "error creating session token");
             InboundEmailError::ProcessingError(Box::new(e))
@@ -154,6 +158,30 @@ pub fn route_inbound_email<S: AsRef<Store>>(
             Some("Your Income Form"),
             text_template.render().ok().as_deref(),
             html_template.render().ok().as_deref(),
+        );
+
+        store.queue_email(&outbound_email).ok();
+    } else if parsed.get_from() == "forwarding-noreply@google.com" {
+        // Gmail forwarding confirmation. Try to auto-confirm. Send the confirmation code to the
+        // user just in case
+        let confirmation = GmailForwardingConfirmation::try_from(&parsed).map_err(|e| {
+            tracing::error!("error parsing gmail forwarding confirmation");
+            InboundEmailError::ProcessingError(Box::new(e))
+        })?;
+
+        // Make a simple post request to the URL
+        let url = confirmation.get_confirmation_url();
+        ureq::post(url)
+            .set("Host", "mail.google.com")
+            .send(std::io::empty())
+            .ok();
+
+        // Send the confirmation code to the user as well
+        let outbound_email = OutboundEmail::new(
+            parsed.get_from(),
+            Some("Gmail Email Forwarding Confirmation Code"),
+            Some(confirmation.get_confirmation_code()),
+            None,
         );
 
         store.queue_email(&outbound_email).ok();
@@ -189,37 +217,6 @@ mod route_inbound_email_test {
     use crate::store::Store;
     use rusqlite::Connection;
     use std::fs;
-    use std::rc::Rc;
-
-    struct SelfDestructingStore {
-        file_name: String,
-        store: Store,
-    }
-
-    impl SelfDestructingStore {
-        fn new(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
-            let mut conn = Connection::open(name)?;
-            db::init(&mut conn)?;
-            Ok(Self {
-                file_name: name.to_string(),
-                store: Store::from(conn),
-            })
-        }
-
-        fn get_handle(&self) -> &Store {
-            &self.store
-        }
-
-        fn get_db_handle(&self) -> Rc<Connection> {
-            self.store.handle()
-        }
-    }
-
-    impl Drop for SelfDestructingStore {
-        fn drop(&mut self) {
-            fs::remove_file(&self.file_name).ok();
-        }
-    }
 
     fn setup() -> Store {
         let mut conn = Connection::open(":memory:").unwrap();
