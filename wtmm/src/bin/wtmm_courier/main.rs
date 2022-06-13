@@ -21,7 +21,7 @@ fn run_app() -> Result<(), Box<dyn error::Error>> {
             match res {
                 Ok(_) => (),
                 Err(e) => {
-                    tracing::error!(id = id, "could not send email: {}", e);
+                    print_error_chain(&e);
                 }
             };
             thread::sleep(time::Duration::from_secs(10));

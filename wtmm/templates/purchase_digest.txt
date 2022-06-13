@@ -1,4 +1,4 @@
-♫ Hi there 
+Hi there 
 {% if purchases.len() == 0 %}
 No transactions from {{ start }} to {{ end }}. Great job ※\(^o^)/※
 {% else %}
