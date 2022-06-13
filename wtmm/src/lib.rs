@@ -138,7 +138,8 @@ pub fn route_inbound_email<S: AsRef<Store>>(
     let msgid = parsed.get_message_id().unwrap_or("[no-message-id]");
 
     if parsed.get_to() == get_income_email() {
-        // Create a user session
+        // User emailed income@ to receive a link to the page where
+        // they can input income information
         let (_, token) = store.create_session_token(parsed.get_from()).map_err(|e| {
             tracing::error!(msgid, "error creating session token");
             InboundEmailError::ProcessingError(Box::new(e))
@@ -157,6 +158,8 @@ pub fn route_inbound_email<S: AsRef<Store>>(
         );
 
         store.queue_email(&outbound_email).ok();
+    } else if parsed.get_from() == "forwarding-noreply@google.com" { 
+        
     } else if raw_email.contains(&get_bank_alert_email()) {
         let purchase = Purchase::try_from(&parsed).map_err(|e| {
             tracing::error!(msgid, "error parsing email as purchase");
@@ -189,37 +192,6 @@ mod route_inbound_email_test {
     use crate::store::Store;
     use rusqlite::Connection;
     use std::fs;
-    use std::rc::Rc;
-
-    struct SelfDestructingStore {
-        file_name: String,
-        store: Store,
-    }
-
-    impl SelfDestructingStore {
-        fn new(name: &str) -> Result<Self, Box<dyn std::error::Error>> {
-            let mut conn = Connection::open(name)?;
-            db::init(&mut conn)?;
-            Ok(Self {
-                file_name: name.to_string(),
-                store: Store::from(conn),
-            })
-        }
-
-        fn get_handle(&self) -> &Store {
-            &self.store
-        }
-
-        fn get_db_handle(&self) -> Rc<Connection> {
-            self.store.handle()
-        }
-    }
-
-    impl Drop for SelfDestructingStore {
-        fn drop(&mut self) {
-            fs::remove_file(&self.file_name).ok();
-        }
-    }
 
     fn setup() -> Store {
         let mut conn = Connection::open(":memory:").unwrap();
