@@ -2,6 +2,7 @@ pub mod currency;
 pub mod db;
 pub mod email;
 pub mod error_handling;
+pub mod gmail_forwarding_confirmation;
 pub mod hooks;
 pub mod outbound_email;
 pub mod purchase;
@@ -17,12 +18,14 @@ use askama::Template;
 use chrono::{TimeZone, Utc};
 use db::RowId;
 use email::{get_bank_alert_email, get_domain, get_income_email, Email};
+use gmail_forwarding_confirmation::GmailForwardingConfirmation;
 use outbound_email::OutboundEmail;
 use purchase::Purchase;
 use scheduler::{ScheduledJob, ScheduledJobError};
 use std::env;
 use store::{Store, StoreError};
 use thiserror::Error;
+use ureq;
 
 #[derive(Debug, Error)]
 #[error("could not send email")]
@@ -158,8 +161,27 @@ pub fn route_inbound_email<S: AsRef<Store>>(
         );
 
         store.queue_email(&outbound_email).ok();
-    } else if parsed.get_from() == "forwarding-noreply@google.com" { 
-        
+    } else if parsed.get_from() == "forwarding-noreply@google.com" {
+        // Gmail forwarding confirmation. Try to auto-confirm. Send the confirmation code to the
+        // user just in case
+        let confirmation = GmailForwardingConfirmation::try_from(&parsed).map_err(|e| {
+            tracing::error!("error parsing gmail forwarding confirmation");
+            InboundEmailError::ProcessingError(Box::new(e))
+        })?;
+
+        // Make a simple post request to the URL
+        let url = confirmation.get_confirmation_url();
+        ureq::post(url).set("Host", "mail.google.com").send(std::io::empty()).ok();
+
+        // Send the confirmation code to the user as well
+        let outbound_email = OutboundEmail::new(
+            parsed.get_from(),
+            Some("Gmail Email Forwarding Confirmation Code"),
+            Some(confirmation.get_confirmation_code()),
+            None,
+        );
+
+        store.queue_email(&outbound_email).ok();
     } else if raw_email.contains(&get_bank_alert_email()) {
         let purchase = Purchase::try_from(&parsed).map_err(|e| {
             tracing::error!(msgid, "error parsing email as purchase");
