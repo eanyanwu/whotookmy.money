@@ -1,4 +1,3 @@
-pub mod comms;
 pub mod currency;
 pub mod db;
 pub mod email;
@@ -9,9 +8,11 @@ pub mod purchase;
 pub mod report;
 pub mod scheduler;
 pub mod store;
+pub mod templates;
 pub mod url_match;
 pub mod user;
 
+use crate::templates::{IncomeFormEmailHtmlTemplate, IncomeFormEmailTextTemplate};
 use chrono::{TimeZone, Utc};
 use db::RowId;
 use email::{get_bank_alert_email, get_domain, get_income_email, Email};
@@ -62,6 +63,7 @@ pub fn report_job<S: AsRef<Store>>(
             &user_email,
             Some(&report.get_subject()),
             Some(&report.get_text_body().unwrap_or_default()),
+            None,
         );
 
         let email_id = store
@@ -84,13 +86,16 @@ pub fn send_email(id: RowId, email: &OutboundEmail, store: &Store) -> Result<(),
         "From": "{from}",
         "To": "{to}",
         "Subject": "{subject}",
-        "TextBody": "{body}"
+        "TextBody": "{body}",
+        "HtmlBody": "{body_html}"
         }}"#,
         from = email.get_from(),
         to = email.get_to(),
         subject = email.get_subject(),
         body = email.get_body(),
+        body_html = email.get_body_html(),
     );
+    println!("{json}");
 
     let res = ureq::post("https://api.postmarkapp.com/email")
         .set("X-Postmark-Server-Token", &postmark_token)
@@ -137,7 +142,10 @@ pub fn route_inbound_email<S: AsRef<Store>>(
             InboundEmailError::ProcessingError(Box::new(e))
         })?;
         // Create a special link for the user to input income
-        let income_link = format!("https://{}/income/{}", get_domain(), token);
+        let link = format!("https://{}/income/{}", get_domain(), token);
+
+        let html_template = IncomeFormEmailHtmlTemplate { link: link.clone() };
+        let text_template = IncomeFormEmailTextTemplate { link: link.clone() };
 
         // Send an email to the user
     } else if raw_email.contains(&get_bank_alert_email()) {
@@ -326,8 +334,8 @@ mod send_email_test {
             "INSERT INTO user(user_email)
             VALUES ('person@example.org');
 
-            INSERT INTO outbound_email(user_id, subject, body, sent_at)
-            VALUES (1, 'Test', 'Test', NULL);",
+            INSERT INTO outbound_email(user_id, subject, body, body_html, sent_at)
+            VALUES (1, 'Test', 'Test', '<html>TEST</html>', NULL);",
         )
         .unwrap();
 

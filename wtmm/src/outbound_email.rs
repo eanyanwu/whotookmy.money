@@ -5,10 +5,16 @@ pub struct OutboundEmail {
     destination: String,
     subject: Option<String>,
     body: Option<String>,
+    body_html: Option<String>,
 }
 
 impl OutboundEmail {
-    pub fn new(to: &str, subject: Option<&str>, body: Option<&str>) -> Self {
+    pub fn new(
+        to: &str,
+        subject: Option<&str>,
+        body: Option<&str>,
+        body_html: Option<&str>,
+    ) -> Self {
         let mut sender = String::from("alerts");
         sender.push_str(get_domain());
 
@@ -17,6 +23,7 @@ impl OutboundEmail {
             destination: to.to_string(),
             subject: subject.map(|s| s.to_string()),
             body: body.map(|s| s.to_string()),
+            body_html: body_html.map(|s| s.to_string()),
         }
     }
 
@@ -39,7 +46,9 @@ impl OutboundEmail {
     pub fn get_body(&self) -> &str {
         self.body.as_deref().unwrap_or_default()
     }
-}
 
-#[cfg(test)]
-mod test {}
+    /// Get the html body version of this email
+    pub fn get_body_html(&self) -> &str {
+        self.body_html.as_deref().unwrap_or_default()
+    }
+}

@@ -66,6 +66,8 @@ pub fn init(connection: &mut Connection) -> Result<(), DatabaseError> {
                 created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
             );",
         ),
+        // Support optionally sending html versions of email
+        M::up("ALTER TABLE outbound_email ADD COLUMN body_html TEXT"),
     ]);
 
     migrations.to_latest(connection)?;

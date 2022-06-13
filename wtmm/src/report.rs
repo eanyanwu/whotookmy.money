@@ -1,5 +1,7 @@
 use crate::currency::cents_to_dollar_string;
 use crate::purchase::Purchase;
+use crate::templates::PurchaseDigestTemplate;
+use askama::Template;
 use chrono::{TimeZone, Utc};
 use cron::Schedule;
 use rusqlite::Row;
@@ -8,17 +10,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use thiserror::Error;
-use askama::Template;
-
-#[derive(Template)]
-#[template(path = "purchase_digest.txt")]
-struct PurchaseDigestTemplate {
-    total_spend: String,
-    count_transactions: usize,
-    start: String,
-    end: String,
-    purchases: Vec<(String, String)>
-}
 
 #[derive(Debug)]
 pub struct PurchaseDigest {
@@ -74,8 +65,8 @@ impl PurchaseDigest {
 
         for purchase in self.purchase_by_cost.iter().take(3) {
             purchases.push((
-                    purchase.get_merchant().to_string(),
-                    cents_to_dollar_string(purchase.get_amount_in_cents())
+                purchase.get_merchant().to_string(),
+                cents_to_dollar_string(purchase.get_amount_in_cents()),
             ));
         }
 
@@ -120,16 +111,15 @@ impl Report {
 
     pub fn get_text_body(&self) -> Option<String> {
         match self {
-            Report::PurchaseDigest(d) => d.render_text()
+            Report::PurchaseDigest(d) => d.render_text(),
         }
     }
 
     pub fn get_html_body(&self) -> Option<String> {
         match self {
-            Report::PurchaseDigest(d) => d.render_html()
+            Report::PurchaseDigest(d) => d.render_html(),
         }
     }
-
 }
 
 /// Enum representing the different flavors of reports we support

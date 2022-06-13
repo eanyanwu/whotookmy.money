@@ -140,7 +140,7 @@ impl Store {
 
         let mut stmt = c
             .prepare(
-                "SELECT outbound_email_id, user.user_email, subject, body
+                "SELECT outbound_email_id, user.user_email, subject, body, body_html
             FROM outbound_email
             INNER JOIN user
             ON user.user_id = outbound_email.user_id
@@ -154,10 +154,16 @@ impl Store {
                 let destination = r.get::<_, String>(1)?;
                 let subject = r.get::<_, Option<String>>(2)?;
                 let body = r.get::<_, Option<String>>(3)?;
+                let body_html = r.get::<_, Option<String>>(4)?;
                 let id = r.get::<_, RowId>(0)?;
                 Ok((
                     id,
-                    OutboundEmail::new(&destination, subject.as_deref(), body.as_deref()),
+                    OutboundEmail::new(
+                        &destination,
+                        subject.as_deref(),
+                        body.as_deref(),
+                        body_html.as_deref(),
+                    ),
                 ))
             })
             .unwrap();
@@ -213,13 +219,18 @@ impl Store {
         } else {
             let mut stmt = c
                 .prepare(
-                    "INSERT INTO outbound_email (user_id, subject, body)
-                VALUES (?, ?, ?)",
+                    "INSERT INTO outbound_email (user_id, subject, body, body_html)
+                VALUES (?, ?, ?, ?)",
                 )
                 .unwrap();
 
             let email_id = stmt
-                .insert(params![user_id, e.get_subject(), e.get_body()])
+                .insert(params![
+                    user_id,
+                    e.get_subject(),
+                    e.get_body(),
+                    e.get_body_html()
+                ])
                 .map_err(|e| StoreError::DatabaseError("inserting outbound email", e))?;
 
             Ok(email_id)
@@ -500,7 +511,7 @@ mod test {
         .unwrap();
 
         // create an email
-        let email = OutboundEmail::new("person@example.org", Some("Hello"), Some("Bye"));
+        let email = OutboundEmail::new("person@example.org", Some("Hello"), Some("Bye"), None);
         store.queue_email(&email).unwrap();
 
         let count = c
