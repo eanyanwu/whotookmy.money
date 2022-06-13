@@ -12,6 +12,7 @@ pub mod templates;
 pub mod url_match;
 pub mod user;
 
+use askama::Template;
 use crate::templates::{IncomeFormEmailHtmlTemplate, IncomeFormEmailTextTemplate};
 use chrono::{TimeZone, Utc};
 use db::RowId;
@@ -133,6 +134,7 @@ pub fn route_inbound_email<S: AsRef<Store>>(
         tracing::error!("could not parse inbound email");
         InboundEmailError::ProcessingError(Box::new(e))
     })?;
+
     let msgid = parsed.get_message_id().unwrap_or("[no-message-id]");
 
     if parsed.get_to() == get_income_email() {
@@ -147,7 +149,14 @@ pub fn route_inbound_email<S: AsRef<Store>>(
         let html_template = IncomeFormEmailHtmlTemplate { link: link.clone() };
         let text_template = IncomeFormEmailTextTemplate { link: link.clone() };
 
-        // Send an email to the user
+        let outbound_email = OutboundEmail::new(
+            parsed.get_from(),
+            Some("Your Income Form"),
+            text_template.render().ok().as_deref(),
+            html_template.render().ok().as_deref(),
+        );
+
+        store.queue_email(&outbound_email).ok();
     } else if raw_email.contains(&get_bank_alert_email()) {
         let purchase = Purchase::try_from(&parsed).map_err(|e| {
             tracing::error!(msgid, "error parsing email as purchase");
@@ -212,13 +221,19 @@ mod route_inbound_email_test {
         }
     }
 
+    fn setup() -> Store {
+        let mut conn = Connection::open(":memory:").unwrap();
+        db::init(&mut conn).unwrap();
+        Store::from(conn)
+    }
+
     #[test]
     fn test_route_inbound_schwab_email() {
-        let store = SelfDestructingStore::new("test_route_inbound_schwab_email").unwrap();
-        let c = store.get_db_handle();
+        let store = setup();
+        let c = store.handle();
 
         let schwab_email = fs::read_to_string("./test_assets/schwab_alert").unwrap();
-        route_inbound_email(&schwab_email, store.get_handle()).unwrap();
+        route_inbound_email(&schwab_email, &store).unwrap();
 
         let (email, tz_offset): (String, i32) = c
             .query_row("SELECT user_email, tz_offset FROM user", [], |r| {
@@ -242,11 +257,11 @@ mod route_inbound_email_test {
 
     #[test]
     fn test_route_inbound_chase_email() {
-        let store = SelfDestructingStore::new("test_route_inbound_chase_email").unwrap();
-        let c = store.get_db_handle();
+        let store = setup();
+        let c = store.handle();
 
         let chase_email = fs::read_to_string("./test_assets/chase_alert").unwrap();
-        route_inbound_email(&chase_email, store.get_handle()).unwrap();
+        route_inbound_email(&chase_email, &store).unwrap();
 
         let (email, tz_offset): (String, i32) = c
             .query_row("SELECT user_email, tz_offset FROM user", [], |r| {
@@ -266,6 +281,32 @@ mod route_inbound_email_test {
         assert_eq!(tz_offset, -14_400);
         assert_eq!(report_type, ReportType::PurchaseDigest);
         assert_eq!(purchase_count, 1);
+    }
+
+    #[test]
+    fn test_route_email_income_form() {
+        let store = setup();
+        let c = store.handle();
+
+        let income_form_request = fs::read_to_string("./test_assets/income_form_request").unwrap();
+        route_inbound_email(&income_form_request, &store).unwrap();
+
+        // A session token should have been created
+        let token: String = c.query_row(
+            "SELECT session_token FROM session",
+            [],
+            |r| r.get(0)
+        ).unwrap();
+
+        // This session token  should have been used to create an email
+        let (body, body_html): (String, String) = c.query_row(
+            "SELECT body, body_html FROM outbound_email",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?))
+        ).unwrap();
+
+        assert!(body.contains(&token));
+        assert!(body_html.contains(&token));
     }
 }
 
@@ -325,7 +366,7 @@ mod send_email_test {
     }
 
     #[test]
-    fn test_send_email() {
+    fn test_send_email_bank_alert() {
         let store = setup();
         let c = store.handle();
 
