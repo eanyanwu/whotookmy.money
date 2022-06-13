@@ -12,8 +12,8 @@ pub mod templates;
 pub mod url_match;
 pub mod user;
 
-use askama::Template;
 use crate::templates::{IncomeFormEmailHtmlTemplate, IncomeFormEmailTextTemplate};
+use askama::Template;
 use chrono::{TimeZone, Utc};
 use db::RowId;
 use email::{get_bank_alert_email, get_domain, get_income_email, Email};
@@ -292,18 +292,16 @@ mod route_inbound_email_test {
         route_inbound_email(&income_form_request, &store).unwrap();
 
         // A session token should have been created
-        let token: String = c.query_row(
-            "SELECT session_token FROM session",
-            [],
-            |r| r.get(0)
-        ).unwrap();
+        let token: String = c
+            .query_row("SELECT session_token FROM session", [], |r| r.get(0))
+            .unwrap();
 
         // This session token  should have been used to create an email
-        let (body, body_html): (String, String) = c.query_row(
-            "SELECT body, body_html FROM outbound_email",
-            [],
-            |r| Ok((r.get(0)?, r.get(1)?))
-        ).unwrap();
+        let (body, body_html): (String, String) = c
+            .query_row("SELECT body, body_html FROM outbound_email", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
 
         assert!(body.contains(&token));
         assert!(body_html.contains(&token));

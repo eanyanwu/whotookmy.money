@@ -20,7 +20,7 @@ struct IncomeForm {
 }
 
 pub fn income_form(match_result: UrlMatchResult, _req: &mut Request) -> ResponseBox {
-    let _user_id = match_result.get_path_variables()[0];
+    let session_id = match_result.get_path_variables()[0];
     let template = IncomeForm { id: "0123" };
     let html = template.render().unwrap();
     let html_len = html.len();

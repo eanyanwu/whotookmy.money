@@ -20,7 +20,7 @@ fn main() {
     // Routing
     let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> = vec![
         (UrlPattern::new("POST/"), postmark),
-        (UrlPattern::new("GET/income/:id"), income_form),
+        (UrlPattern::new("GET/income/:str"), income_form),
     ];
 
     for mut req in server.incoming_requests() {
