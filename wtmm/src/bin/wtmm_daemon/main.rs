@@ -1,45 +1,11 @@
-use std::io::empty;
 use std::str::FromStr;
-use tiny_http::{Request, Response, ResponseBox, Server};
+use tiny_http::{Request, ResponseBox, Server};
 use tracing::info;
 use tracing_subscriber;
-use wtmm::db;
-use wtmm::email::PostmarkInboundEmail;
-use wtmm::error_handling::print_error_chain;
-use wtmm::route_inbound_email;
-use wtmm::store::Store;
 use wtmm::url_match::{matches, UrlMatchResult, UrlPattern};
 
-// Construct an empty HTTP response with a status code s
-fn empty_result(status: u32) -> ResponseBox {
-    Response::new(status.into(), vec![], Box::new(empty()), Some(0), None)
-}
-
-fn postmark_email_webhook(_: UrlMatchResult, req: &mut Request) -> ResponseBox {
-    let mut buf = String::new();
-
-    if let Err(_) = req.as_reader().read_to_string(&mut buf) {
-        // Assumption: Postmark will only send us valid request bodies
-        tracing::warn!("couldn't read request body.");
-        empty_result(400)
-    } else {
-        if let Ok(p) = serde_json::from_str::<PostmarkInboundEmail>(&buf) {
-            let mut c = db::get_connection().expect("could not connect to db");
-            db::init(&mut c).expect("could not initialize connection");
-            let store = Store::from(c);
-
-            if let Err(e) = route_inbound_email(&p.raw_email, store) {
-                print_error_chain(&e);
-            }
-            // Respond to valid postmark emails with a 200 regardless of outcome
-            empty_result(200)
-        } else {
-            // Assumption: Postmark will only send us valid json.
-            tracing::warn!("could not parse request body as json");
-            empty_result(400)
-        }
-    }
-}
+mod http_handlers;
+use http_handlers::{empty_result, income_form, postmark};
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -52,8 +18,10 @@ fn main() {
     info!("listening on port {}", port);
 
     // Routing
-    let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> =
-        vec![(UrlPattern::new("POST/"), postmark_email_webhook)];
+    let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> = vec![
+        (UrlPattern::new("POST/"), postmark),
+        (UrlPattern::new("GET/income/:str"), income_form),
+    ];
 
     for mut req in server.incoming_requests() {
         let mut res = empty_result(400);

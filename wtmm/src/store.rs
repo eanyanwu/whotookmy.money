@@ -7,6 +7,7 @@ use chrono::Utc;
 use rusqlite::{named_params, params, Connection};
 use std::rc::Rc;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -139,7 +140,7 @@ impl Store {
 
         let mut stmt = c
             .prepare(
-                "SELECT outbound_email_id, user.user_email, subject, body
+                "SELECT outbound_email_id, user.user_email, subject, body, body_html
             FROM outbound_email
             INNER JOIN user
             ON user.user_id = outbound_email.user_id
@@ -153,10 +154,16 @@ impl Store {
                 let destination = r.get::<_, String>(1)?;
                 let subject = r.get::<_, Option<String>>(2)?;
                 let body = r.get::<_, Option<String>>(3)?;
+                let body_html = r.get::<_, Option<String>>(4)?;
                 let id = r.get::<_, RowId>(0)?;
                 Ok((
                     id,
-                    OutboundEmail::new(&destination, subject.as_deref(), body.as_deref()),
+                    OutboundEmail::new(
+                        &destination,
+                        subject.as_deref(),
+                        body.as_deref(),
+                        body_html.as_deref(),
+                    ),
                 ))
             })
             .unwrap();
@@ -212,13 +219,18 @@ impl Store {
         } else {
             let mut stmt = c
                 .prepare(
-                    "INSERT INTO outbound_email (user_id, subject, body)
-                VALUES (?, ?, ?)",
+                    "INSERT INTO outbound_email (user_id, subject, body, body_html)
+                VALUES (?, ?, ?, ?)",
                 )
                 .unwrap();
 
             let email_id = stmt
-                .insert(params![user_id, e.get_subject(), e.get_body()])
+                .insert(params![
+                    user_id,
+                    e.get_subject(),
+                    e.get_body(),
+                    e.get_body_html()
+                ])
                 .map_err(|e| StoreError::DatabaseError("inserting outbound email", e))?;
 
             Ok(email_id)
@@ -371,6 +383,42 @@ impl Store {
         )
         .ok();
     }
+
+    /// Create a new session token for a user. These can be used for temporary
+    /// access to micro UIs that modify user info
+    pub fn create_session_token(&self, user_email: &str) -> Result<(RowId, String), StoreError> {
+        let c = &self.handle();
+
+        let (user_id, _) = self.get_or_create_user(user_email)?;
+        let mut buf = Uuid::encode_buffer();
+        let session_token = Uuid::new_v4().simple().encode_lower(&mut buf).to_string();
+
+        let mut stmt = c
+            .prepare(
+                "INSERT INTO session (user_id, session_token)
+            VALUES(?, ?)",
+            )
+            .unwrap();
+
+        let id = stmt
+            .insert(params![user_id, session_token])
+            .map_err(|e| StoreError::DatabaseError("new session token", e))?;
+
+        Ok((id, session_token))
+    }
+
+    pub fn get_session_token(&self, id: RowId) -> Result<String, StoreError> {
+        let c = &self.handle();
+
+        c.query_row(
+            "SELECT session_token
+            FROM session
+            WHERE session_id = ?",
+            [id],
+            |r| r.get(0),
+        )
+        .map_err(|e| StoreError::DatabaseError("get session token", e))
+    }
 }
 
 #[cfg(test)]
@@ -463,7 +511,7 @@ mod test {
         .unwrap();
 
         // create an email
-        let email = OutboundEmail::new("person@example.org", Some("Hello"), Some("Bye"));
+        let email = OutboundEmail::new("person@example.org", Some("Hello"), Some("Bye"), None);
         store.queue_email(&email).unwrap();
 
         let count = c
@@ -562,5 +610,16 @@ mod test {
             Report::PurchaseDigest(d)
             if validate_purchases(d.get_purchases()) && d.get_period_start() == 2
         ));
+    }
+
+    #[test]
+    fn test_create_session_token() {
+        let store = setup();
+        let (id, token) = store
+            .create_session_token("somenewuser@example.org")
+            .unwrap();
+        assert_eq!(id, 1);
+
+        assert_eq!(store.get_session_token(1).unwrap(), token);
     }
 }

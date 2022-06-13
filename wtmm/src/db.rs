@@ -58,6 +58,16 @@ pub fn init(connection: &mut Connection) -> Result<(), DatabaseError> {
     let migrations = Migrations::new(vec![
         M::up(SCHEMA),
         M::up("ALTER TABLE user ADD COLUMN tz_offset INTEGER NOT NULL DEFAULT 0"),
+        M::up(
+            "CREATE TABLE session (
+                session_id INTEGER PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+                session_token TEXT NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
+            );",
+        ),
+        // Support optionally sending html versions of email
+        M::up("ALTER TABLE outbound_email ADD COLUMN body_html TEXT"),
     ]);
 
     migrations.to_latest(connection)?;

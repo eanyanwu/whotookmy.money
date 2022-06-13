@@ -1,0 +1,81 @@
+Return-Path: <hello@ezeanyinabia.com>
+Received: by p-pm-inbound02a-aws-useast1a.inbound.postmarkapp.com (Postfix, from userid 996)
+	id 3F0C9453CA4; Mon, 13 Jun 2022 02:21:24 +0000 (UTC)
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	p-pm-inbound02a-aws-useast1a
+X-Spam-Status: No
+X-Spam-Score: -2.7
+X-Spam-Tests: DKIM_SIGNED,DKIM_VALID,DKIM_VALID_AU,EMPTY_MESSAGE,HTML_MESSAGE,
+	MIME_HTML_MOSTLY,RCVD_IN_DNSWL_HI,SPF_HELO_PASS,SPF_PASS
+Received-SPF: pass (ezeanyinabia.com: Sender is authorized to use 'hello@ezeanyinabia.com' in 'mfrom' identity (mechanism 'include:spf.messagingengine.com' matched)) receiver=p-pm-inbound02a-aws-useast1a; identity=mailfrom; envelope-from="hello@ezeanyinabia.com"; helo=out3-smtp.messagingengine.com; client-ip=66.111.4.27
+Received: from out3-smtp.messagingengine.com (out3-smtp.messagingengine.com [66.111.4.27])
+	(using TLSv1.2 with cipher ADH-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by p-pm-inbound02a-aws-useast1a.inbound.postmarkapp.com (Postfix) with ESMTPS id F3AEF453CA2
+	for <income@dev.whotookmy.money>; Mon, 13 Jun 2022 02:21:23 +0000 (UTC)
+Received: from compute2.internal (compute2.nyi.internal [10.202.2.46])
+	by mailout.nyi.internal (Postfix) with ESMTP id B2E6F5C00CF
+	for <income@dev.whotookmy.money>; Sun, 12 Jun 2022 22:21:23 -0400 (EDT)
+Received: from imap48 ([10.202.2.98])
+  by compute2.internal (MEProxy); Sun, 12 Jun 2022 22:21:23 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	ezeanyinabia.com; h=cc:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:sender:subject
+	:subject:to:to; s=fm3; t=1655086883; x=1655173283; bh=VEutW5xgSN
+	ViH40xELIOb34C4ly/kqpl2Voo31L0TWw=; b=SDjjYksdC5uWtkJQ7FShced77g
+	gBp6eZPa+sGUCJgRva+oyHLOjBCF3nhpVJSywKaMSjMpTJp+cjWwCu4hLNUofNQp
+	JYi3K79cJmhFTUQX1EpWO537bnC4OeB8LbMwo14sbEp2zPBylFYzGQ5lSxTJj29f
+	P5m8n98SZwqyQedbTaWo3/1Fx4sb7wk+VAZHjercwq3c2uJmUOVedg8lpLAxJEuW
+	YsT9LlpxTdm36PPhE+pcjoKdhEUeecj9fYym6V/o9SFUCQQC3xSsmQZn1FaP/OOX
+	me3CLn05ggMdHekbnWVKghecTO2zDfd3DflJRdU+/D3B4+0TIsyBBwptjP+Q==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-type:date:date:feedback-id
+	:feedback-id:from:from:in-reply-to:message-id:mime-version
+	:reply-to:sender:subject:subject:to:to:x-me-proxy:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=1655086883; x=
+	1655173283; bh=VEutW5xgSNViH40xELIOb34C4ly/kqpl2Voo31L0TWw=; b=U
+	i6uaSuKA28fzo23JfbqNLmETFNDeiosdri5Zt6i5h3suMvNW2QSQmkE8jLrq+LGP
+	CHWPXA84nFZl4Yzm+jBjb5fKbvsqA7aC6KUU4VAy4MDt5xbANjJh5j+Cmb8vaW8S
+	YaMD+GSe/WyjLKjTGRk2VRZI8e7dKj8GQEZk0d4vz1+wYuBDF2s2+4+j8Qt3LNCO
+	XL/2D9bY1i9mS+mzw8enVN2SbPEaS22B34CF2uvPYRh22N5DeaEFpwX8+bTzfIw2
+	PyHq5W0cBntP9vqu3WieIebusg8svNvEnQBWaEq1ROQwtHLJo9CtmzpmY3ZXKkZn
+	4ub7H0bpMfZHAZtn0FTRw==
+X-ME-Sender: <xms:I5-mYore82oMdlwTAmSuemdO12v1oB67-EDQA90jiE_Q1CsbWZVImA>
+    <xme:I5-mYurY876ouzvB-ULYKsb1wGZC2l39VYCsd5ZmIoabDY7VyPCIdRmksrvrpE4-7
+    HmR40PLXx3K6szfHXk>
+X-ME-Proxy-Cause: gggruggvucftvghtrhhoucdtuddrgedvfedrudduiedgheefucetufdoteggodetrfdotf
+    fvucfrrhhofhhilhgvmecuhfgrshhtofgrihhlpdfqfgfvpdfurfetoffkrfgpnffqhgen
+    uceurghilhhouhhtmecufedttdenucfgmhhpthihuchsuhgsjhgvtghtucdluddtmdenuc
+    fjughrpefofgggkfffhffvufgtsegrtderreerredtnecuhfhrohhmpedfgfiivgcutehn
+    higrnhifuhdfuceohhgvlhhlohesvgiivggrnhihihhnrggsihgrrdgtohhmqeenucggtf
+    frrghtthgvrhhnpeejtddvhfevudehveettdetvedtfeffteefkeejjefhiedvkeehgffg
+    vdeiueefudenucevlhhushhtvghrufhiiigvpedtnecurfgrrhgrmhepmhgrihhlfhhroh
+    hmpehhvghllhhosegviigvrghnhihinhgrsghirgdrtghomh
+X-ME-Proxy: <xmx:I5-mYtPvzT0bx8O_5c87DQCHgHMzK5DLfT3RZvZzBhrVKMdg9e4Wog>
+    <xmx:I5-mYv4ajqu6X9loKgC2nwFV94svNtAmvSVz21N0U-8CWwqrg4-x9Q>
+    <xmx:I5-mYn52LRoku839vUtmdOvQzBmKNu_QNjc1tKyr2HT9R9cM72uR0w>
+    <xmx:I5-mYpHQ6azFm-2apJ-DhAnDFYuNzo5G-vXK6aacjI5e2ByTNVmP_A>
+Feedback-ID: id8c9442c:Fastmail
+Received: by mailuser.nyi.internal (Postfix, from userid 501)
+	id 818BA31A0062; Sun, 12 Jun 2022 22:21:23 -0400 (EDT)
+X-Mailer: MessagingEngine.com Webmail Interface
+User-Agent: Cyrus-JMAP/3.7.0-alpha0-692-gb287c361f5-fm-20220603.003-gb287c361
+Mime-Version: 1.0
+Message-Id: <1675febf-49b2-42fc-8256-6215c903c0f0@www.fastmail.com>
+Date: Sun, 12 Jun 2022 22:21:00 -0400
+From: "Eze Anyanwu" <hello@ezeanyinabia.com>
+To: income@dev.whotookmy.money
+Subject: 
+Content-Type: multipart/alternative;
+ boundary=8ace910ccfca4bb199e2e753b990434c
+
+--8ace910ccfca4bb199e2e753b990434c
+Content-Type: text/plain
+
+
+--8ace910ccfca4bb199e2e753b990434c
+Content-Type: text/html
+
+<!DOCTYPE html><html><head><title></title><style type="text/css">p.MsoNormal,p.MsoNoSpacing{margin:0}</style></head><body><div><br></div></body></html>
+--8ace910ccfca4bb199e2e753b990434c--
+

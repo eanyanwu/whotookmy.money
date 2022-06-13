@@ -1,4 +1,3 @@
-pub mod comms;
 pub mod currency;
 pub mod db;
 pub mod email;
@@ -9,12 +8,15 @@ pub mod purchase;
 pub mod report;
 pub mod scheduler;
 pub mod store;
+pub mod templates;
 pub mod url_match;
 pub mod user;
 
+use crate::templates::{IncomeFormEmailHtmlTemplate, IncomeFormEmailTextTemplate};
+use askama::Template;
 use chrono::{TimeZone, Utc};
 use db::RowId;
-use email::{get_bank_alert_email, Email};
+use email::{get_bank_alert_email, get_domain, get_income_email, Email};
 use outbound_email::OutboundEmail;
 use purchase::Purchase;
 use scheduler::{ScheduledJob, ScheduledJobError};
@@ -61,7 +63,8 @@ pub fn report_job<S: AsRef<Store>>(
         let email = OutboundEmail::new(
             &user_email,
             Some(&report.get_subject()),
-            Some(&report.get_body()),
+            Some(&report.get_text_body().unwrap_or_default()),
+            None,
         );
 
         let email_id = store
@@ -84,13 +87,16 @@ pub fn send_email(id: RowId, email: &OutboundEmail, store: &Store) -> Result<(),
         "From": "{from}",
         "To": "{to}",
         "Subject": "{subject}",
-        "TextBody": "{body}"
+        "TextBody": "{body}",
+        "HtmlBody": "{body_html}"
         }}"#,
         from = email.get_from(),
         to = email.get_to(),
         subject = email.get_subject(),
         body = email.get_body(),
+        body_html = email.get_body_html(),
     );
+    println!("{json}");
 
     let res = ureq::post("https://api.postmarkapp.com/email")
         .set("X-Postmark-Server-Token", &postmark_token)
@@ -128,9 +134,30 @@ pub fn route_inbound_email<S: AsRef<Store>>(
         tracing::error!("could not parse inbound email");
         InboundEmailError::ProcessingError(Box::new(e))
     })?;
+
     let msgid = parsed.get_message_id().unwrap_or("[no-message-id]");
 
-    if raw_email.contains(&get_bank_alert_email()) {
+    if parsed.get_to() == get_income_email() {
+        // Create a user session
+        let (_, token) = store.create_session_token(parsed.get_from()).map_err(|e| {
+            tracing::error!(msgid, "error creating session token");
+            InboundEmailError::ProcessingError(Box::new(e))
+        })?;
+        // Create a special link for the user to input income
+        let link = format!("https://{}/income/{}", get_domain(), token);
+
+        let html_template = IncomeFormEmailHtmlTemplate { link: link.clone() };
+        let text_template = IncomeFormEmailTextTemplate { link: link.clone() };
+
+        let outbound_email = OutboundEmail::new(
+            parsed.get_from(),
+            Some("Your Income Form"),
+            text_template.render().ok().as_deref(),
+            html_template.render().ok().as_deref(),
+        );
+
+        store.queue_email(&outbound_email).ok();
+    } else if raw_email.contains(&get_bank_alert_email()) {
         let purchase = Purchase::try_from(&parsed).map_err(|e| {
             tracing::error!(msgid, "error parsing email as purchase");
             InboundEmailError::ProcessingError(Box::new(e))
@@ -194,13 +221,19 @@ mod route_inbound_email_test {
         }
     }
 
+    fn setup() -> Store {
+        let mut conn = Connection::open(":memory:").unwrap();
+        db::init(&mut conn).unwrap();
+        Store::from(conn)
+    }
+
     #[test]
     fn test_route_inbound_schwab_email() {
-        let store = SelfDestructingStore::new("test_route_inbound_schwab_email").unwrap();
-        let c = store.get_db_handle();
+        let store = setup();
+        let c = store.handle();
 
         let schwab_email = fs::read_to_string("./test_assets/schwab_alert").unwrap();
-        route_inbound_email(&schwab_email, store.get_handle()).unwrap();
+        route_inbound_email(&schwab_email, &store).unwrap();
 
         let (email, tz_offset): (String, i32) = c
             .query_row("SELECT user_email, tz_offset FROM user", [], |r| {
@@ -224,11 +257,11 @@ mod route_inbound_email_test {
 
     #[test]
     fn test_route_inbound_chase_email() {
-        let store = SelfDestructingStore::new("test_route_inbound_chase_email").unwrap();
-        let c = store.get_db_handle();
+        let store = setup();
+        let c = store.handle();
 
         let chase_email = fs::read_to_string("./test_assets/chase_alert").unwrap();
-        route_inbound_email(&chase_email, store.get_handle()).unwrap();
+        route_inbound_email(&chase_email, &store).unwrap();
 
         let (email, tz_offset): (String, i32) = c
             .query_row("SELECT user_email, tz_offset FROM user", [], |r| {
@@ -248,6 +281,30 @@ mod route_inbound_email_test {
         assert_eq!(tz_offset, -14_400);
         assert_eq!(report_type, ReportType::PurchaseDigest);
         assert_eq!(purchase_count, 1);
+    }
+
+    #[test]
+    fn test_route_email_income_form() {
+        let store = setup();
+        let c = store.handle();
+
+        let income_form_request = fs::read_to_string("./test_assets/income_form_request").unwrap();
+        route_inbound_email(&income_form_request, &store).unwrap();
+
+        // A session token should have been created
+        let token: String = c
+            .query_row("SELECT session_token FROM session", [], |r| r.get(0))
+            .unwrap();
+
+        // This session token  should have been used to create an email
+        let (body, body_html): (String, String) = c
+            .query_row("SELECT body, body_html FROM outbound_email", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+
+        assert!(body.contains(&token));
+        assert!(body_html.contains(&token));
     }
 }
 
@@ -290,7 +347,7 @@ mod report_job_test {
             })
             .unwrap();
 
-        assert!(body.contains("$0.00"));
+        assert!(body.contains("No transactions"));
     }
 }
 
@@ -307,7 +364,7 @@ mod send_email_test {
     }
 
     #[test]
-    fn test_send_email() {
+    fn test_send_email_bank_alert() {
         let store = setup();
         let c = store.handle();
 
@@ -316,8 +373,8 @@ mod send_email_test {
             "INSERT INTO user(user_email)
             VALUES ('person@example.org');
 
-            INSERT INTO outbound_email(user_id, subject, body, sent_at)
-            VALUES (1, 'Test', 'Test', NULL);",
+            INSERT INTO outbound_email(user_id, subject, body, body_html, sent_at)
+            VALUES (1, 'Test', 'Test', '<html>TEST</html>', NULL);",
         )
         .unwrap();
 
