@@ -171,7 +171,10 @@ pub fn route_inbound_email<S: AsRef<Store>>(
 
         // Make a simple post request to the URL
         let url = confirmation.get_confirmation_url();
-        ureq::post(url).set("Host", "mail.google.com").send(std::io::empty()).ok();
+        ureq::post(url)
+            .set("Host", "mail.google.com")
+            .send(std::io::empty())
+            .ok();
 
         // Send the confirmation code to the user as well
         let outbound_email = OutboundEmail::new(
