@@ -26,7 +26,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 #[error("could not send email")]
-pub struct SendEmailError(String);
+pub struct SendEmailError(#[source] Box<dyn std::error::Error>);
 
 #[derive(Error, Debug)]
 pub enum InboundEmailError {
@@ -92,9 +92,9 @@ pub fn send_email(id: RowId, email: &OutboundEmail, store: &Store) -> Result<(),
         }}"#,
         from = email.get_from(),
         to = email.get_to(),
-        subject = email.get_subject(),
-        body = email.get_body(),
-        body_html = email.get_body_html(),
+        subject = email.get_subject().as_bytes().escape_ascii().to_string(),
+        body = email.get_body().as_bytes().escape_ascii().to_string(),
+        body_html = email.get_body_html().as_bytes().escape_ascii().to_string(),
     );
     println!("{json}");
 
@@ -118,9 +118,9 @@ pub fn send_email(id: RowId, email: &OutboundEmail, store: &Store) -> Result<(),
 
             let error = format!("{} {}\n{}", code, status_text, error);
 
-            Err(SendEmailError(error))
+            Err(SendEmailError(error.into()))
         }
-        Err(e) => Err(SendEmailError(format!("network error: {}", e))),
+        Err(e) => Err(SendEmailError(format!("network error: {}", e).into())),
     }
 }
 /// Handle all inbound postmark emails
