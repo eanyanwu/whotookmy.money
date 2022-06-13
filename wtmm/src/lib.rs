@@ -14,7 +14,7 @@ pub mod user;
 
 use chrono::{TimeZone, Utc};
 use db::RowId;
-use email::{get_bank_alert_email, Email};
+use email::{get_bank_alert_email, get_domain, get_income_email, Email};
 use outbound_email::OutboundEmail;
 use purchase::Purchase;
 use scheduler::{ScheduledJob, ScheduledJobError};
@@ -130,7 +130,17 @@ pub fn route_inbound_email<S: AsRef<Store>>(
     })?;
     let msgid = parsed.get_message_id().unwrap_or("[no-message-id]");
 
-    if raw_email.contains(&get_bank_alert_email()) {
+    if parsed.get_to() == get_income_email() {
+        // Create a user session
+        let (_, token) = store.create_session_token(parsed.get_from()).map_err(|e| {
+            tracing::error!(msgid, "error creating session token");
+            InboundEmailError::ProcessingError(Box::new(e))
+        })?;
+        // Create a special link for the user to input income
+        let income_link = format!("https://{}/income/{}", get_domain(), token);
+
+        // Send an email to the user
+    } else if raw_email.contains(&get_bank_alert_email()) {
         let purchase = Purchase::try_from(&parsed).map_err(|e| {
             tracing::error!(msgid, "error parsing email as purchase");
             InboundEmailError::ProcessingError(Box::new(e))

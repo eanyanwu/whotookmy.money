@@ -26,6 +26,14 @@ pub fn get_domain() -> &'static String {
     }
 }
 
+/// Returns the email address for exposing the income input form
+pub fn get_income_email() -> String {
+    let mut email = String::from("income");
+    email.push_str(&get_domain());
+    email
+}
+
+/// Return the email address for ingesting bank alerts
 pub fn get_bank_alert_email() -> String {
     let mut email = String::from("alerts");
     email.push_str(&get_domain());

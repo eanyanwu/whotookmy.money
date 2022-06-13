@@ -7,6 +7,7 @@ use chrono::Utc;
 use rusqlite::{named_params, params, Connection};
 use std::rc::Rc;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Error, Debug)]
 pub enum StoreError {
@@ -371,6 +372,42 @@ impl Store {
         )
         .ok();
     }
+
+    /// Create a new session token for a user. These can be used for temporary
+    /// access to micro UIs that modify user info
+    pub fn create_session_token(&self, user_email: &str) -> Result<(RowId, String), StoreError> {
+        let c = &self.handle();
+
+        let (user_id, _) = self.get_or_create_user(user_email)?;
+        let mut buf = Uuid::encode_buffer();
+        let session_token = Uuid::new_v4().simple().encode_lower(&mut buf).to_string();
+
+        let mut stmt = c
+            .prepare(
+                "INSERT INTO session (user_id, session_token)
+            VALUES(?, ?)",
+            )
+            .unwrap();
+
+        let id = stmt
+            .insert(params![user_id, session_token])
+            .map_err(|e| StoreError::DatabaseError("new session token", e))?;
+
+        Ok((id, session_token))
+    }
+
+    pub fn get_session_token(&self, id: RowId) -> Result<String, StoreError> {
+        let c = &self.handle();
+
+        c.query_row(
+            "SELECT session_token
+            FROM session
+            WHERE session_id = ?",
+            [id],
+            |r| r.get(0),
+        )
+        .map_err(|e| StoreError::DatabaseError("get session token", e))
+    }
 }
 
 #[cfg(test)]
@@ -562,5 +599,16 @@ mod test {
             Report::PurchaseDigest(d)
             if validate_purchases(d.get_purchases()) && d.get_period_start() == 2
         ));
+    }
+
+    #[test]
+    fn test_create_session_token() {
+        let store = setup();
+        let (id, token) = store
+            .create_session_token("somenewuser@example.org")
+            .unwrap();
+        assert_eq!(id, 1);
+
+        assert_eq!(store.get_session_token(1).unwrap(), token);
     }
 }
