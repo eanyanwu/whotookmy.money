@@ -8,6 +8,17 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use thiserror::Error;
+use askama::Template;
+
+#[derive(Template)]
+#[template(path = "purchase_digest.txt")]
+struct PurchaseDigestTemplate {
+    total_spend: String,
+    count_transactions: usize,
+    start: String,
+    end: String,
+    purchases: Vec<(String, String)>
+}
 
 #[derive(Debug)]
 pub struct PurchaseDigest {
@@ -42,6 +53,42 @@ impl PurchaseDigest {
     pub fn get_period_end(&self) -> i64 {
         self.end
     }
+
+    // TODO: Offer an html version of this
+    pub fn render_html(&self) -> Option<String> {
+        None
+    }
+
+    /// Get the report's body, as would be seen in an email
+    pub fn render_text(&self) -> Option<String> {
+        let total_spend = cents_to_dollar_string(
+            self.purchase_by_cost
+                .iter()
+                .map(|p| p.get_amount_in_cents())
+                .sum(),
+        );
+        let count_transactions = self.purchase_by_cost.len();
+        let mut purchases: Vec<(String, String)> = Vec::new();
+        let start = Report::format_date(Utc.timestamp(self.start, 0));
+        let end = Report::format_date(Utc.timestamp(self.end, 0));
+
+        for purchase in self.purchase_by_cost.iter().take(3) {
+            purchases.push((
+                    purchase.get_merchant().to_string(),
+                    cents_to_dollar_string(purchase.get_amount_in_cents())
+            ));
+        }
+
+        let template = PurchaseDigestTemplate {
+            start,
+            end,
+            total_spend,
+            purchases,
+            count_transactions,
+        };
+
+        template.render().ok()
+    }
 }
 
 /// A user report
@@ -71,46 +118,18 @@ impl Report {
         )
     }
 
-    /// Get the report's body, as would be seen in an email
-    pub fn get_body(&self) -> String {
+    pub fn get_text_body(&self) -> Option<String> {
         match self {
-            Report::PurchaseDigest(d) => {
-                let total_spend = cents_to_dollar_string(
-                    d.purchase_by_cost
-                        .iter()
-                        .map(|p| p.get_amount_in_cents())
-                        .sum(),
-                );
-                let count_transactions = d.purchase_by_cost.len();
-                let mut top_purchases = String::new();
-                let start = Report::format_date(Utc.timestamp(d.start, 0));
-                let end = Report::format_date(Utc.timestamp(d.end, 0));
-
-                for purchase in d.purchase_by_cost.iter().take(3) {
-                    top_purchases.push_str(&format!(
-                        "* {merchant}: {amount}\n",
-                        merchant = purchase.get_merchant(),
-                        amount = cents_to_dollar_string(purchase.get_amount_in_cents())
-                    ));
-                }
-
-                format!(
-                    concat!(
-                        "From {start} To {end}\n",
-                        "Total spend: {total_spend}\n",
-                        "Number of transactions: {count_transactions}\n",
-                        "Your most expensive purchases:\n",
-                        "{top_purchases}",
-                    ),
-                    start = start,
-                    end = end,
-                    total_spend = total_spend,
-                    top_purchases = top_purchases,
-                    count_transactions = count_transactions,
-                )
-            }
+            Report::PurchaseDigest(d) => d.render_text()
         }
     }
+
+    pub fn get_html_body(&self) -> Option<String> {
+        match self {
+            Report::PurchaseDigest(d) => d.render_html()
+        }
+    }
+
 }
 
 /// Enum representing the different flavors of reports we support
@@ -255,10 +274,27 @@ mod test {
 
         let report = Report::PurchaseDigest(PurchaseDigest::new(purchases, 1, 4));
 
-        let body = report.get_body();
+        let body = report.get_text_body().unwrap();
+
+        println!("{body}");
 
         assert!(body.contains("$13.00"));
         // Only the first three transactions are displayed
         assert!(!body.contains("USB"));
+
+        // For now
+        assert_eq!(report.get_html_body(), None);
+    }
+
+    #[test]
+    fn test_report_generation_no_transactions() {
+        let purchases: Vec<Purchase> = Vec::new();
+
+        let report = Report::PurchaseDigest(PurchaseDigest::new(purchases, 1, 4));
+
+        let body = report.get_text_body().unwrap();
+
+        println!("{body}");
+        assert!(body.contains("No transactions from"));
     }
 }

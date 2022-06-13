@@ -61,7 +61,7 @@ pub fn report_job<S: AsRef<Store>>(
         let email = OutboundEmail::new(
             &user_email,
             Some(&report.get_subject()),
-            Some(&report.get_body()),
+            Some(&report.get_text_body().unwrap_or_default()),
         );
 
         let email_id = store
@@ -300,7 +300,7 @@ mod report_job_test {
             })
             .unwrap();
 
-        assert!(body.contains("$0.00"));
+        assert!(body.contains("No transactions"));
     }
 }
 
