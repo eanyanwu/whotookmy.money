@@ -2,8 +2,8 @@ use std::str::FromStr;
 use tiny_http::{Request, ResponseBox, Server};
 use tracing::info;
 use tracing_subscriber;
-use wtmm::url_match::{matches, UrlMatchResult, UrlPattern};
 use wtmm::db;
+use wtmm::url_match::{matches, UrlMatchResult, UrlPattern};
 
 mod http_handlers;
 use http_handlers::{empty_response, postmark};
@@ -22,9 +22,8 @@ fn main() {
     info!("listening on port {}", port);
 
     // Routing
-    let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> = vec![
-        (UrlPattern::new("POST/"), postmark),
-    ];
+    let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> =
+        vec![(UrlPattern::new("POST/"), postmark)];
 
     for mut req in server.incoming_requests() {
         let mut res = empty_response(400);

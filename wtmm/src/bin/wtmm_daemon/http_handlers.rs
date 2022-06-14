@@ -1,4 +1,4 @@
-use std::io::{empty};
+use std::io::empty;
 use tiny_http::{Request, Response, ResponseBox};
 use wtmm::db;
 use wtmm::email::PostmarkInboundEmail;
