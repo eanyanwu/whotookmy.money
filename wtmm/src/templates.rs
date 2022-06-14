@@ -9,15 +9,3 @@ pub struct PurchaseDigestTemplate {
     pub end: String,
     pub purchases: Vec<(String, String)>,
 }
-
-#[derive(Template)]
-#[template(path = "income_form_email.txt")]
-pub struct IncomeFormEmailTextTemplate {
-    pub link: String,
-}
-
-#[derive(Template)]
-#[template(path = "income_form_email.html")]
-pub struct IncomeFormEmailHtmlTemplate {
-    pub link: String,
-}
