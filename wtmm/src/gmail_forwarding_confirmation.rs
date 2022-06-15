@@ -11,6 +11,7 @@ pub struct TryFromEmailError {}
 pub struct GmailForwardingConfirmation {
     confirmation_url: String,
     confirmation_code: String,
+    user_email: String,
 }
 
 impl TryFrom<&Email> for GmailForwardingConfirmation {
@@ -40,9 +41,17 @@ impl TryFrom<&Email> for GmailForwardingConfirmation {
             .find(|s| s.starts_with("https://mail-settings.google.com/"))
             .ok_or_else(|| TryFromEmailError {})?;
 
+        // The user's email is the very first thing on the first line.
+        // If we have reached this poit, it's safe to assume that there is at least one line
+        let user_email = lines[0]
+            .split(' ')
+            .next()
+            .ok_or_else(|| TryFromEmailError {})?;
+
         Ok(Self {
             confirmation_code: confirmation_code.to_string(),
             confirmation_url: confirmation_url.to_string(),
+            user_email: user_email.to_string(),
         })
     }
 }
@@ -56,6 +65,11 @@ impl GmailForwardingConfirmation {
     /// Returns the gmail forwarding confirmation code
     pub fn get_confirmation_code(&self) -> &str {
         self.confirmation_code.as_str()
+    }
+
+    /// Returns the email of the user that is forwarding to us
+    pub fn get_user_email(&self) -> &str {
+        self.user_email.as_str()
     }
 }
 
@@ -76,5 +90,9 @@ mod test {
             "https://mail-settings.google.com/mail/vf-%5BANGjdJ9_brCNgl_AIYnkFYn9TgEgE1Q3aXdCDrnvN_EWcfT-DVEgYCEhn7KrQa90K4VIfQupv52uc5K8NMe4T2B06UAI3u49LOhRBXchEA%5D-e3P7aWGI7DzF8ZKCxNnqxqn0blw"
             );
         assert_eq!(confirmation.get_confirmation_code(), "83581330");
+        assert_eq!(
+            confirmation.get_user_email(),
+            "ezeanyinabia.anyanwu@gmail.com"
+        );
     }
 }

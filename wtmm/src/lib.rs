@@ -155,7 +155,7 @@ pub fn route_inbound_email<S: AsRef<Store>>(
 
         // Send the confirmation code to the user as well
         let outbound_email = OutboundEmail::new(
-            parsed.get_from(),
+            confirmation.get_user_email(),
             Some("Gmail Email Forwarding Confirmation Code"),
             Some(confirmation.get_confirmation_code()),
             None,
