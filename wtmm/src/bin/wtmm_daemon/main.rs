@@ -2,10 +2,11 @@ use std::str::FromStr;
 use tiny_http::{Request, ResponseBox, Server};
 use tracing::info;
 use tracing_subscriber;
+use wtmm::db;
 use wtmm::url_match::{matches, UrlMatchResult, UrlPattern};
 
 mod http_handlers;
-use http_handlers::{empty_result, income_form, postmark};
+use http_handlers::{empty_response, postmark};
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -13,18 +14,19 @@ fn main() {
     let port = std::env::var("PORT").expect("missing PORT env var");
     let port = u16::from_str(port.as_ref()).expect("PORT should be a valid 16 bit integer");
 
+    let mut c = db::get_connection().expect("could not connect to db");
+    db::init(&mut c).expect("could not initialize connection");
+
     let server = Server::http(("127.0.0.1", port)).expect("could not bind to PORT");
 
     info!("listening on port {}", port);
 
     // Routing
-    let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> = vec![
-        (UrlPattern::new("POST/"), postmark),
-        (UrlPattern::new("GET/income/:str"), income_form),
-    ];
+    let routes: Vec<(UrlPattern, fn(UrlMatchResult, &mut Request) -> ResponseBox)> =
+        vec![(UrlPattern::new("POST/"), postmark)];
 
     for mut req in server.incoming_requests() {
-        let mut res = empty_result(400);
+        let mut res = empty_response(400);
         for (pattern, handler) in routes.iter() {
             let url = format!("{}{}", req.method(), req.url());
             if let Some(route_result) = matches(&url, &pattern) {

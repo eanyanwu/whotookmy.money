@@ -13,11 +13,9 @@ pub mod templates;
 pub mod url_match;
 pub mod user;
 
-use crate::templates::{IncomeFormEmailHtmlTemplate, IncomeFormEmailTextTemplate};
-use askama::Template;
 use chrono::{TimeZone, Utc};
 use db::RowId;
-use email::{get_bank_alert_email, get_domain, get_income_email, Email};
+use email::{get_bank_alert_email, Email};
 use gmail_forwarding_confirmation::GmailForwardingConfirmation;
 use outbound_email::OutboundEmail;
 use purchase::Purchase;
@@ -140,28 +138,7 @@ pub fn route_inbound_email<S: AsRef<Store>>(
 
     let msgid = parsed.get_message_id().unwrap_or("[no-message-id]");
 
-    if parsed.get_to() == get_income_email() {
-        // User emailed income@ to receive a link to the page where
-        // they can input income information
-        let (_, token) = store.create_session_token(parsed.get_from()).map_err(|e| {
-            tracing::error!(msgid, "error creating session token");
-            InboundEmailError::ProcessingError(Box::new(e))
-        })?;
-        // Create a special link for the user to input income
-        let link = format!("https://{}/income/{}", get_domain(), token);
-
-        let html_template = IncomeFormEmailHtmlTemplate { link: link.clone() };
-        let text_template = IncomeFormEmailTextTemplate { link: link.clone() };
-
-        let outbound_email = OutboundEmail::new(
-            parsed.get_from(),
-            Some("Your Income Form"),
-            text_template.render().ok().as_deref(),
-            html_template.render().ok().as_deref(),
-        );
-
-        store.queue_email(&outbound_email).ok();
-    } else if parsed.get_from() == "forwarding-noreply@google.com" {
+    if parsed.get_from() == "forwarding-noreply@google.com" {
         // Gmail forwarding confirmation. Try to auto-confirm. Send the confirmation code to the
         // user just in case
         let confirmation = GmailForwardingConfirmation::try_from(&parsed).map_err(|e| {
@@ -278,30 +255,6 @@ mod route_inbound_email_test {
         assert_eq!(tz_offset, -14_400);
         assert_eq!(report_type, ReportType::PurchaseDigest);
         assert_eq!(purchase_count, 1);
-    }
-
-    #[test]
-    fn test_route_email_income_form() {
-        let store = setup();
-        let c = store.handle();
-
-        let income_form_request = fs::read_to_string("./test_assets/income_form_request").unwrap();
-        route_inbound_email(&income_form_request, &store).unwrap();
-
-        // A session token should have been created
-        let token: String = c
-            .query_row("SELECT session_token FROM session", [], |r| r.get(0))
-            .unwrap();
-
-        // This session token  should have been used to create an email
-        let (body, body_html): (String, String) = c
-            .query_row("SELECT body, body_html FROM outbound_email", [], |r| {
-                Ok((r.get(0)?, r.get(1)?))
-            })
-            .unwrap();
-
-        assert!(body.contains(&token));
-        assert!(body_html.contains(&token));
     }
 }
 

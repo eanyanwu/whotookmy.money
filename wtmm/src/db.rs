@@ -5,6 +5,7 @@ use std::env;
 use thiserror::Error;
 
 pub type RowId = i64;
+pub type Cents = u64;
 
 #[derive(Debug, Error)]
 pub enum DatabaseError {
