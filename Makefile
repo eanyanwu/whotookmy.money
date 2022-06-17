@@ -13,6 +13,9 @@ build:
 		npm run build && \
 		pkg --target node18-linux-x64 --output pkg/wtmm_server dist/index.js
 
+# Just in case I start doing anything special for release builds 
+build-release: build
+
 ansible-deploy:
 	cd ansible && \
 		ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts --extra-vars "env=dev" deploy.yml
