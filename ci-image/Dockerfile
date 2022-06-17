@@ -10,6 +10,8 @@ RUN apt-get --yes install \
 
 RUN pip3 install ansible
 
+RUN npm install -g pkg
+
 WORKDIR /home/cicd
 
 CMD ["python3", "--version"]
