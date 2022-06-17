@@ -1,6 +1,7 @@
 import http from "http";
 import setup_router from "find-my-way";
 import config from "./config";
+import { postmark } from "./http_handlers";
 
 const router = setup_router({
   ignoreTrailingSlash: true,
@@ -10,15 +11,14 @@ const router = setup_router({
   },
 });
 
-router.on("POST", "/postmark_webhook", (req, res, params) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("ok");
+router.on("POST", "/postmark_webhook", async (req, res, params) => {
+  return postmark(req, res);
 });
 
 // Node's ServerOption types are not up to date
 // @ts-ignore
 let server = http.createServer({ keepAlive: true }, (req, res) => {
-  router.lookup(req, res);
+  await router.lookup(req, res);
 });
 
 const PORT = config.get("server").port;
