@@ -41,7 +41,7 @@ jobs:
           paths:
             - backend/node_modules
           key: v1-node-deps-{{ checksum "backend/package-lock.json" }}
-      - run: cd backend/pkg/ && cp wtmm_server ../../../ansible/roles/deploy/files/bin
+      - run: cd backend/pkg/ && cp wtmm_server ../../ansible/roles/deploy/files/bin
       - run: 'if [ "$CIRCLE_BRANCH" == "main" ]; then make ansible-deploy-prod; else make ansible-deploy; fi'
   provision:
     docker:
