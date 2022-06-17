@@ -1,11 +1,6 @@
 import http from "http";
 import setup_router from "find-my-way";
-
-class SetupError extends Error {
-  constructor() {
-    super("error setting up server. could not start");
-  }
-}
+import config from "./config";
 
 const router = setup_router({
   ignoreTrailingSlash: true,
@@ -24,12 +19,6 @@ let server = http.createServer((req, res) => {
   router.lookup(req, res);
 });
 
-const PORT = process.env.PORT;
-
-if (!PORT) {
-  console.log("PORT is not specified");
-  throw new SetupError();
-}
-
+const PORT = config.get("server").port;
 console.log(`server listening on port: ${PORT}`);
 server.listen(PORT);
