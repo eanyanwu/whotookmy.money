@@ -1,0 +1,68 @@
+version: 2.1
+parameters:
+  should_provision:
+    description: "Should the ansible provision playbook run?"
+    type: boolean
+    default: false
+jobs:
+  build:
+    docker:
+      - image: eanyanwu/wtmm:latest
+        auth:
+          username: eanyanwu
+          password: $DOCKER_ACCESS_TOKEN
+    resource_class: small 
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-node-deps-{{ checksum "backend/package-lock.json" }}
+      - run: make build
+      - save_cache:
+          paths:
+            - backend/node_modules
+          key: v1-node-deps-{{ checksum "backend/package-lock.json" }}
+      - run: make test
+  deploy:
+    docker:
+      - image: eanyanwu/wtmm:latest
+        auth:
+          username: eanyanwu
+          password: $DOCKER_ACCESS_TOKEN
+    resource_class: medium 
+    steps:
+      - checkout
+      - add_ssh_keys
+      - restore_cache:
+          keys:
+            - v1-node-deps-{{ checksum "backend/package-lock.json" }}
+      - run: make build-release
+      - save_cache:
+          paths:
+            - backend/node_modules
+          key: v1-node-deps-{{ checksum "backend/package-lock.json" }}
+      - run: cd backend/pkg/ && cp wtmm_server ../../../ansible/roles/deploy/files/bin
+      - run: 'if [ "$CIRCLE_BRANCH" == "main" ]; then make ansible-deploy-prod; else make ansible-deploy; fi'
+  provision:
+    docker:
+      - image: eanyanwu/wtmm:latest
+        auth:
+          username: eanyanwu
+          password: $DOCKER_ACCESS_TOKEN
+    resource_class: small
+    steps:
+      - checkout
+      - add_ssh_keys
+      - run: make ansible-provision
+
+workflows:
+  on-branch-push:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+  on-provision:
+    when: << pipeline.parameters.should_provision >>
+    jobs:
+      - provision
