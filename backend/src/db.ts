@@ -1,123 +1,71 @@
-import type { Database } from "better-sqlite3";
 import config from "./config";
+import { Migrations, M } from "./migrations";
 import Connection from "better-sqlite3";
 
+const SCHEMA:string = `
+CREATE TABLE IF NOT EXISTS user (
+    user_id INTEGER PRIMARY KEY,
+    user_email TEXT NOT NULL UNIQUE,
+    tz_offset INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
+);
+CREATE TABLE IF NOT EXISTS outbound_email (
+    outbound_email_id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+    sender TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT,
+    body_html TEXT,
+    sent_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
+);
+CREATE TABLE IF NOT EXISTS purchase (
+    purchase_id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+    amount_in_cents INTEGER NOT NULL,
+    merchant TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
+);
+CREATE TABLE user_report (
+    user_report_id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+    report_type TEXT NOT NULL,
+    schedule TEXT NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s')),
+    UNIQUE (user_id, report_type)
+);
+            
+CREATE TABLE user_report_outbound_email (
+    user_report_id INTEGER NOT NULL REFERENCES user_report(user_report_id) ON DELETE CASCADE,
+    outbound_email_id ITEGER NOT NULL REFERENCES outbound_email(outbound_email_id) ON DELETE CASCADE,
+    PRIMARY KEY (user_report_id, outbound_email_id)
+);
+`;
+
+const MIGRATIONS: M[] = [];
+
+/* Returns a connection to the database */
 const open = () => {
-  const file = config.get("server").db_file;
-  return new Connection(file);
+  const file = config.get("server.db_file");
+  const conn = new Connection(file);
+  conn.pragma("foreigh_keys = ON");
+  return conn;
 };
 
-/* MIGRATIONS {{{*/
 
-class InvalidTargetVersion extends Error {
-  constructor() {
-    super("Invalid target version for migration");
-  }
+/* Migrates the database and returns a connection to it */
+const open_and_init = () => {
+  const file = config.get("server.db_file");
+  const conn = open();
+  const migrations = new Migrations([
+    M.up(SCHEMA),
+    ... MIGRATIONS,
+  ]);
+
+  migrations.toLatest(conn);
+
+  return conn;
 }
 
-class CannotRevertMigration extends Error {
-  constructor() {
-    super("Reverse migration not defined");
-  }
-}
-
-/* A single migration up/down definitions */
-class M {
-  u: string = "";
-  d: string | null = null;
-
-  private constructor(u: string, d: string | null) {
-    this.u = u;
-    this.d = d;
-  }
-
-  /* SQL statements to migrate forward */
-  static up(s: string): M {
-    return new M(s, null);
-  }
-
-  /* Optional SQL statements to migrate back */
-  down(s: string) {
-    this.d = s;
-    return this;
-  }
-}
-
-/* The set of defined migrations */
-class Migrations {
-  private ms: M[] = [];
-
-  constructor(migrations: M[]) {
-    this.ms = migrations;
-  }
-
-  /* Migrate to the lates migration */
-  toLatest(conn: Database) {
-    const targetVersion = this.ms.length;
-
-    this.goto(conn, targetVersion);
-  }
-
-  /* Go to a given database version */
-  goto(conn: Database, targetVersion: number) {
-    let currentVersion = this.userVersion(conn);
-
-    // The target version must point at one of the migrations we have defined
-    if (targetVersion > this.ms.length || targetVersion < 0) {
-      throw new InvalidTargetVersion();
-    }
-
-    let action: () => void;
-
-    if (currentVersion === targetVersion) {
-      console.log("no migration to run, db already up to date");
-      return;
-    } else if (targetVersion < currentVersion) {
-      // Go down
-      action = conn.transaction(() => {
-        for (let i = currentVersion - 1; i >= targetVersion; i--) {
-          try {
-            let m = this.ms[i];
-            if (!m.d) {
-              throw new CannotRevertMigration();
-            }
-            conn.exec(m.d);
-          } catch (e) {
-            console.log(`reverse migration to version ${i} failed`);
-            throw e;
-          }
-        }
-      });
-    } else {
-      // Go up
-      action = conn.transaction(() => {
-        for (let i = currentVersion; i < targetVersion; i++) {
-          try {
-            let m = this.ms[i];
-            conn.exec(m.u);
-          } catch (e) {
-            console.log(`migration to version ${i + 1} failed`);
-            throw e;
-          }
-        }
-      });
-    }
-
-    action();
-    this.setUserVersion(conn, targetVersion);
-  }
-
-  /* The user_version integer in the sqlite file database header */
-  userVersion(conn: Database): number {
-    return conn.pragma("user_version", { simple: true });
-  }
-
-  /* Set the database user_version integer in the sqlite file database header */
-  private setUserVersion(conn: Database, target: number) {
-    conn.pragma(`user_version = ${target}`);
-  }
-}
-
-/* }}}*/
-
-export { M, Migrations, CannotRevertMigration, InvalidTargetVersion, open };
+export { open, open_and_init };
