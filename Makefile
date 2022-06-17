@@ -1,19 +1,26 @@
-build:
-	cd wtmm && cargo build --locked
-
-build-release:
-	cd wtmm && cargo build --locked --release --target-dir release
+run:
+	cd backend && PORT=8080 npm run server
 
 test:
-	cd wtmm && cargo test
-	cd wtmm && cargo fmt --check
-	cd ansible && ansible-playbook --inventory hosts --syntax-check deploy.yml provision.yml
+	cd backend && npm run test
+
+fmt:
+	cd backend && npm run fmt
+
+build:
+	cd backend && \
+		npm install && \
+		npm run build && \
+		pkg --target node18-linux-x64 --output pkg/wtmm_server dist/index.js
 
 ansible-deploy:
-	cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts --extra-vars "env=dev" deploy.yml
+	cd ansible && \
+		ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts --extra-vars "env=dev" deploy.yml
 
 ansible-deploy-prod:
-	cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts --extra-vars "env=prod" deploy.yml
+	cd ansible && \
+		ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts --extra-vars "env=prod" deploy.yml
 
 ansible-provision:
-	cd ansible && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts provision.yml
+	cd ansible && \
+		ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts provision.yml

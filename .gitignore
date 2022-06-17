@@ -1,6 +1,3 @@
-target/
-release/
-build/
-.env
-.password
-*.db
+node_modules
+dist
+pkg

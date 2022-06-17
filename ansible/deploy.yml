@@ -11,7 +11,7 @@
     env_application_name_map:
       dev: dev_wtmm
       prod: wtmm
-    env_daemon_port_map:
+    env_wtmm_server_port_map:
       dev: 5001
       prod: 5000 
     env_email_domain_map:
@@ -21,7 +21,7 @@
     postmark_api_token: "{{ env_api_token_map[env] }}"
     application_name: "{{ env_application_name_map[env] }}"
     application_folder: ".{{ application_name }}"
-    daemon_port: "{{ env_daemon_port_map[env] }}"
+    wtmm_server_port: "{{ env_wtmm_server_port_map[env] }}"
     email_domain: "{{ env_email_domain_map[env] }}"
 
 
