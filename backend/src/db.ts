@@ -2,7 +2,7 @@ import config from "./config";
 import { Migrations, M } from "./migrations";
 import Connection from "better-sqlite3";
 
-const SCHEMA:string = `
+const SCHEMA: string = `
 CREATE TABLE IF NOT EXISTS user (
     user_id INTEGER PRIMARY KEY,
     user_email TEXT NOT NULL UNIQUE,
@@ -53,19 +53,15 @@ const open = () => {
   return conn;
 };
 
-
 /* Migrates the database and returns a connection to it */
 const open_and_init = () => {
   const file = config.get("server.db_file");
   const conn = open();
-  const migrations = new Migrations([
-    M.up(SCHEMA),
-    ... MIGRATIONS,
-  ]);
+  const migrations = new Migrations([M.up(SCHEMA), ...MIGRATIONS]);
 
   migrations.toLatest(conn);
 
   return conn;
-}
+};
 
 export { open, open_and_init };

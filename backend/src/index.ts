@@ -11,8 +11,8 @@ const router = setup_router({
 });
 
 router.on("POST", "/postmark_webhook", (req, res, params) => {
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.end("<body>Hello World</body>");
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("ok");
 });
 
 let server = http.createServer((req, res) => {
@@ -20,5 +20,6 @@ let server = http.createServer((req, res) => {
 });
 
 const PORT = config.get("server").port;
-console.log(`server listening on port: ${PORT}`);
-server.listen(PORT);
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(`server listening on port: ${PORT}`);
+});

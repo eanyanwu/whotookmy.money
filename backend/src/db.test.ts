@@ -13,11 +13,13 @@ describe("Database", function () {
   });
 
   afterEach(async function () {
-    try { await fs.rm(FILE) } catch (_) {}
+    try {
+      await fs.rm(FILE);
+    } catch (_) {}
     config.set("server.db_file", config.get("server.db_file"));
   });
 
-  it("open() dost not migrate database" , function () {
+  it("open() dost not migrate database", function () {
     const conn = open();
 
     const tables = conn.pragma("table_list");
@@ -33,4 +35,4 @@ describe("Database", function () {
 
     assert.ok(tables.length > 2);
   });
-})
+});
