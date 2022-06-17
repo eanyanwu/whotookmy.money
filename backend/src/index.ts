@@ -1,11 +1,6 @@
 import http from "http";
 import setup_router from "find-my-way";
-
-class SetupError extends Error {
-  constructor() {
-    super("error setting up server. could not start");
-  }
-}
+import config from "./config";
 
 const router = setup_router({
   ignoreTrailingSlash: true,
@@ -16,20 +11,15 @@ const router = setup_router({
 });
 
 router.on("POST", "/postmark_webhook", (req, res, params) => {
-  res.writeHead(200, { "Content-Type": "text/html" });
-  res.end("<body>Hello World</body>");
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("ok");
 });
 
 let server = http.createServer((req, res) => {
   router.lookup(req, res);
 });
 
-const PORT = process.env.PORT;
-
-if (!PORT) {
-  console.log("PORT is not specified");
-  throw new SetupError();
-}
-
-console.log(`server listening on port: ${PORT}`);
-server.listen(PORT);
+const PORT = config.get("server").port;
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(`server listening on port: ${PORT}`);
+});
