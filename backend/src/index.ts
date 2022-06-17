@@ -15,7 +15,9 @@ router.on("POST", "/postmark_webhook", (req, res, params) => {
   res.end("ok");
 });
 
-let server = http.createServer((req, res) => {
+// Node's ServerOption types are not up to date
+// @ts-ignore
+let server = http.createServer({ keepAlive: true }, (req, res) => {
   router.lookup(req, res);
 });
 
