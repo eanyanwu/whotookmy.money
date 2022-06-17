@@ -16,16 +16,13 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v2-cargo-deps-{{ checksum "wtmm/Cargo.lock" }}
+            - v1-node-deps-{{ checksum "backend/package-lock.json" }}
       - run: make build
       - save_cache:
           paths:
-            - wtmm/target
-          key: v2-cargo-deps-{{ checksum "wtmm/Cargo.lock" }}
+            - backend/node_modules
+          key: v1-node-deps-{{ checksum "backend/package-lock.json" }}
       - run: make test
-      - store_artifacts:
-          path: /tmp/workspace
-          destination: artifact
   deploy:
     docker:
       - image: eanyanwu/wtmm:latest
@@ -38,13 +35,13 @@ jobs:
       - add_ssh_keys
       - restore_cache:
           keys:
-            - v3-cargo-release-{{ checksum "wtmm/Cargo.lock" }}
+            - v1-node-deps-{{ checksum "backend/package-lock.json" }}
       - run: make build-release
       - save_cache:
           paths:
-            - wtmm/release
-          key: v3-cargo-release-{{ checksum "wtmm/Cargo.lock" }}
-      - run: cd wtmm/release/release && cp wtmm_reporter wtmm_daemon wtmm_courier ../../../ansible/roles/deploy/files/bin
+            - backend/node_modules
+          key: v1-node-deps-{{ checksum "backend/package-lock.json" }}
+      - run: cd backend/pkg/ && cp wtmm_server ../../ansible/roles/deploy/files/bin
       - run: 'if [ "$CIRCLE_BRANCH" == "main" ]; then make ansible-deploy-prod; else make ansible-deploy; fi'
   provision:
     docker:

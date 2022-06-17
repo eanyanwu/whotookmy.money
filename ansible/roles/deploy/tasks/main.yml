@@ -18,12 +18,8 @@
     dest: "{{ item.dest }}"
     mode: 0664
   with_items:
-    - dest: "~/.config/systemd/user/{{ application_name }}_daemon.service"
-      src: wtmm_daemon.service
-    - dest: "~/.config/systemd/user/{{ application_name }}_courier.service"
-      src: wtmm_courier.service
-    - dest: "~/.config/systemd/user/{{ application_name }}_reporter.service"
-      src: wtmm_reporter.service
+    - dest: "~/.config/systemd/user/{{ application_name }}_server.service"
+      src: wtmm_server.service
     - dest: "~/.config/systemd/user/{{ application_name }}.target"
       src: wtmm.target
 - name: start binaries

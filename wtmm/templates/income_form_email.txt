@@ -1,7 +1,0 @@
-Hi there
-
-Paste this link into your browser to tell me more about your income $$$
-
-{{ link }}
-
-The link will expire after you submit, but you can always ask me for another.

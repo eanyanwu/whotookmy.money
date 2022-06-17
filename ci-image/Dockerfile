@@ -1,4 +1,5 @@
-FROM rust:bullseye
+FROM node:18-bullseye
+
 
 RUN apt-get --yes update
 RUN apt-get --yes install \
@@ -9,7 +10,7 @@ RUN apt-get --yes install \
 
 RUN pip3 install ansible
 
-RUN rustup component add rustfmt
+RUN npm install -g pkg
 
 WORKDIR /home/cicd
 
