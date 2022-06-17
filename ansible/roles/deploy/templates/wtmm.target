@@ -1,5 +1,5 @@
 [Unit]
-Wants={{ application_name }}_daemon.service {{ application_name }}_courier.service {{ application_name }}_reporter.service
+Wants={{ application_name }}_server.service
 
 [Install]
 WantedBy=default.target
