@@ -22,11 +22,56 @@ const readRequestPayload = (req: IncomingMessage): Promise<BufferType> => {
   });
 };
 
+type PostmarkAddress = {
+  Email: string;
+  Name: string;
+};
+
+type InboundPostmarkEmail = {
+  FromFull: PostmarkAddress | PostmarkAddress[];
+  ToFull: PostmarkAddress | PostmarkAddress[];
+  Subject: string;
+  MessageID: string;
+  TextBody: string;
+  HtmlBody: string;
+};
+
+function isInboundPostmarkEmail(
+  p: InboundPostmarkEmail | any
+): p is InboundPostmarkEmail {
+  let maybePostmarkEmail = p as InboundPostmarkEmail;
+  return (
+    maybePostmarkEmail.FromFull !== undefined &&
+    maybePostmarkEmail.ToFull !== undefined &&
+    maybePostmarkEmail.Subject !== undefined &&
+    maybePostmarkEmail.MessageID !== undefined &&
+    maybePostmarkEmail.TextBody !== undefined &&
+    maybePostmarkEmail.HtmlBody !== undefined
+  );
+}
+
 const postmark = async (req: IncomingMessage, res: ServerResponse) => {
   let payload = await readRequestPayload(req);
-  let json = payload.toString();
-  console.log({ json });
-  res.end();
+  let json;
+  try {
+    json = JSON.parse(payload.toString());
+  } catch (_) {
+    // Assumption: Postmark will always send us valid JSON
+    res.writeHead(400);
+    res.end();
+    return;
+  }
+
+  if (isInboundPostmarkEmail(json)) {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("OK");
+    return;
+  } else {
+    // Assumption: Postmark will always send us JSON that conforms to the email schema
+    res.writeHead(400);
+    res.end();
+    return;
+  }
 };
 
 export { postmark };
