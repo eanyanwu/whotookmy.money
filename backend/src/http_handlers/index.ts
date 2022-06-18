@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "http";
 import { Buffer } from "buffer";
 import type { Buffer as BufferType } from "buffer";
 
-/* Returns the request payload as a `Buffer` */
+/* Reads and returns the request payload as a `Buffer` */
 const readRequestPayload = (req: IncomingMessage): Promise<BufferType> => {
   return new Promise((resolve, reject) => {
     const chunks: BufferType[] = [];
@@ -22,17 +22,20 @@ const readRequestPayload = (req: IncomingMessage): Promise<BufferType> => {
   });
 };
 
-export type Response = {
+/* A response from one of the http handlers */ 
+export type HttpHandlerResponse = {
   statusCode: number;
   headers?: object;
   data?: string;
 };
 
+/* An email field within the JSON sent by Postmark */
 type PostmarkAddress = {
   Email: string;
   Name: string;
 };
 
+/* A parsed email in JSON format, sent to us by Postmark */
 type InboundPostmarkEmail = {
   FromFull: PostmarkAddress | PostmarkAddress[];
   ToFull: PostmarkAddress | PostmarkAddress[];
@@ -42,6 +45,9 @@ type InboundPostmarkEmail = {
   HtmlBody: string;
 };
 
+/* Type guard for InboundPostmarkEmail
+ * We use this to reject any request body that looks funny
+ */
 function isInboundPostmarkEmail(
   p: InboundPostmarkEmail | any
 ): p is InboundPostmarkEmail {
@@ -56,10 +62,11 @@ function isInboundPostmarkEmail(
   );
 }
 
+/* Handler for postmark webhook requests */ 
 const postmark = async (
   req: IncomingMessage,
   res: ServerResponse
-): Promise<Response> => {
+): Promise<HttpHandlerResponse> => {
   let payload = await readRequestPayload(req);
   let json;
   try {
