@@ -3,7 +3,7 @@ import http from "http";
 import setup_router from "find-my-way";
 import config from "./config";
 import { postmark } from "./http_handlers";
-import type { Response } from "./http_handlers";
+import type { HttpHandlerResponse } from "./http_handlers";
 import { debug, info, timer, elapsed } from "./log";
 
 const router = setup_router({
@@ -20,7 +20,7 @@ router.on("POST", "/postmark_webhook", (req, res, params) => {
 
 let server = http.createServer(async (req, res) => {
   timer("request-duration");
-  const response: Response = await router.lookup(req, res);
+  const response: HttpHandlerResponse = await router.lookup(req, res);
 
   info(
     `${req.method}`,
