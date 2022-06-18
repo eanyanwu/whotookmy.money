@@ -22,6 +22,12 @@ const readRequestPayload = (req: IncomingMessage): Promise<BufferType> => {
   });
 };
 
+export type Response = {
+  statusCode: number;
+  headers?: object;
+  data?: string;
+};
+
 type PostmarkAddress = {
   Email: string;
   Name: string;
@@ -50,27 +56,28 @@ function isInboundPostmarkEmail(
   );
 }
 
-const postmark = async (req: IncomingMessage, res: ServerResponse) => {
+const postmark = async (
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<Response> => {
   let payload = await readRequestPayload(req);
   let json;
   try {
     json = JSON.parse(payload.toString());
   } catch (_) {
     // Assumption: Postmark will always send us valid JSON
-    res.writeHead(400);
-    res.end();
-    return;
+    return { statusCode: 400 };
   }
 
   if (isInboundPostmarkEmail(json)) {
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("OK");
-    return;
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "text/plain" },
+      data: "OK",
+    };
   } else {
     // Assumption: Postmark will always send us JSON that conforms to the email schema
-    res.writeHead(400);
-    res.end();
-    return;
+    return { statusCode: 400 };
   }
 };
 
