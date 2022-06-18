@@ -22,7 +22,7 @@ const readRequestPayload = (req: IncomingMessage): Promise<BufferType> => {
   });
 };
 
-/* A response from one of the http handlers */ 
+/* A response from one of the http handlers */
 export type HttpHandlerResponse = {
   statusCode: number;
   headers?: object;
@@ -62,7 +62,7 @@ function isInboundPostmarkEmail(
   );
 }
 
-/* Handler for postmark webhook requests */ 
+/* Handler for postmark webhook requests */
 const postmark = async (
   req: IncomingMessage,
   res: ServerResponse
