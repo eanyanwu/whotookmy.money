@@ -1,6 +1,10 @@
+import type { Socket } from "net";
 import http from "http";
 import setup_router from "find-my-way";
 import config from "./config";
+import { postmark } from "./http_handlers";
+import type { HttpHandlerResponse } from "./http_handlers";
+import { debug, info, timer, elapsed } from "./log";
 
 const router = setup_router({
   ignoreTrailingSlash: true,
@@ -11,17 +15,35 @@ const router = setup_router({
 });
 
 router.on("POST", "/postmark_webhook", (req, res, params) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("ok");
+  return postmark(req, res);
 });
 
-// Node's ServerOption types are not up to date
-// @ts-ignore
-let server = http.createServer({ keepAlive: true }, (req, res) => {
-  router.lookup(req, res);
+let server = http.createServer(async (req, res) => {
+  timer("request-duration");
+  const response: HttpHandlerResponse = await router.lookup(req, res);
+
+  info(
+    `${req.method}`,
+    `${req.url}`,
+    `${response.statusCode}`,
+    `${response.data ? response.data.length : 0}`
+  );
+
+  res.writeHead(response.statusCode, { ...response.headers });
+  res.end(response.data);
+
+  elapsed("request-duration");
 });
 
+server.on("listening", () => {
+  info(`server listening on port: ${PORT}`);
+  elapsed("server-start");
+});
+
+server.on("connection", (socket: Socket) => {
+  socket.setKeepAlive(true);
+});
+
+timer("server-start");
 const PORT = config.get("server").port;
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`server listening on port: ${PORT}`);
-});
+server.listen(PORT, "127.0.0.1");

@@ -1,6 +1,9 @@
 run:
 	cd backend && PORT=8080 npm run server
 
+check:
+	cd backend && npm run check
+
 test:
 	cd backend && npm run test
 
