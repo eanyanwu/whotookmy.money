@@ -5,6 +5,7 @@ import type { IncomingMessage } from "http";
 import http from "http";
 import type { Socket } from "net";
 import config from "./config";
+import { open_and_init } from "./db";
 import type { HttpHandlerResponse } from "./http_handlers";
 import { postmark } from "./http_handlers";
 import { elapsed, info, timer } from "./log";
@@ -67,6 +68,8 @@ server.on("listening", () => {
 server.on("connection", (socket: Socket) => {
   socket.setKeepAlive(true);
 });
+
+open_and_init();
 
 timer("server-start");
 const PORT = config.get("server").port;

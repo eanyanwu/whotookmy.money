@@ -141,8 +141,8 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
     .join("\n");
 
   return {
-    to,
-    from,
+    to: to.toLowerCase(),
+    from: from.toLowerCase(),
     subject: e["Subject"],
     messageId: e["MessageID"],
     body: emailBody,
@@ -169,7 +169,7 @@ export const postmark = async ({
     } catch (e) {
       // We always want to return OK so postmark doesn't resend the email to us
       // If an error happens when handling the email, just log and move on
-      error("error routing postmark email", e);
+      error(e);
     }
     return {
       statusCode: 200,

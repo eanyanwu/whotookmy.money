@@ -3,19 +3,29 @@ type LogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR";
 /* General-purpose logging function */
 const log = (level: LogLevel, ...logArgs: unknown[]) => {
   let rest = logArgs;
+  // Support structured logging by allowing caller to pass in an object as the
+  // first argument
   let fields = logArgs[0];
 
-  // aparently `typeof null === "object"`
-  if (typeof fields === "object" && fields !== null) {
+  // The first argument is structured data if:
+  // (a) It's an object
+  // (b) It's not null (typeof null == 'object')...
+  // (c) It's not an error. We don't want to touch error objects, just pass them along
+  if (
+    typeof fields === "object" &&
+    fields !== null &&
+    !(fields instanceof Error)
+  ) {
     // fields is an object. flatten its properties
-    let fieldString: string = "";
+    let fieldStrings: string[] = [];
 
     for (const [key, value] of Object.entries(fields)) {
-      fieldString += `${key}=${value}`;
+      fieldStrings.push(`${key}=${value}`);
     }
+
     // replace it with the stringified version
     logArgs.shift();
-    logArgs.unshift(fieldString);
+    logArgs.unshift(fieldStrings.join(" "));
   }
 
   let logFunc = console.log;

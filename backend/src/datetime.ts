@@ -18,7 +18,6 @@ export const parseRfc2822 = (i: string): [Date, number] => {
   const zone = (parts.pop() as string).split("");
   const hours = Number.parseInt([zone[1], zone[2]].join(""));
   const minutes = Number.parseInt([zone[3], zone[4]].join(""));
-  console.log({ zone, hours, minutes });
   const isNegative = zone[0] === "-";
   const seconds = (isNegative ? -1 : 1) * (hours * 60 * 60 + minutes * 60);
 
