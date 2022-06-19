@@ -1,8 +1,8 @@
 import type { InboundEmail } from "../core";
 import { routeEmail } from "../core";
 import { parseRfc2822, toUnixTimestamp } from "../datetime";
-import type { HttpHandlerRequest, HttpHandlerResponse } from "./http_handler";
 import { error } from "../log";
+import type { HttpHandlerRequest, HttpHandlerResponse } from "./http_handler";
 
 class CouldNotParseEmail extends Error {
   constructor() {
@@ -134,7 +134,11 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
     throw new CouldNotParseEmail();
   }
 
-  emailBody = emailBody.split("\n").map(s => s.trim()).filter(s => s != "").join("\n");
+  emailBody = emailBody
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s != "")
+    .join("\n");
 
   return {
     to,
