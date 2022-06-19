@@ -1,5 +1,11 @@
 import { open } from "../db";
 
+export class EmailRateLimit extends Error {
+  constructor() {
+    super("too many emails queued for this user");
+  }
+}
+
 export type User = {
   userId: number;
   userEmail: string;
@@ -13,6 +19,17 @@ export type Purchase = {
   amountInCents: number;
   merchant: string;
   timestamp: number;
+  createdAt: number;
+};
+
+export type OutboundEmail = {
+  outboundEmailId: number;
+  userId: number;
+  sender: string;
+  subject: string;
+  body: string;
+  bodyHtml?: string;
+  sentAt?: number;
   createdAt: number;
 };
 
@@ -70,4 +87,62 @@ export const savePurchase = ({
       timestamp`
     )
     .get({ id: user.userId, amount, merchant, timestamp }) as Purchase;
+};
+
+type QueueEmailArgs = {
+  sender: string;
+  to: string;
+  subject: string;
+  body: string;
+  body_html?: string;
+};
+
+export const queueEmail = ({
+  sender,
+  to,
+  subject,
+  body,
+  body_html,
+}: QueueEmailArgs): OutboundEmail => {
+  const c = open();
+
+  const user = getOrCreateUser({ email: to });
+
+  const count_unsent = c
+    .prepare(
+      `SELECT count(*) as count
+    FROM outbound_email
+    WHERE user_id = ? AND (
+      sent_at IS NULL
+      OR strftime('%s') - sent_at < 300
+    )`
+    )
+    .get(user.userId).count;
+
+  if (count_unsent > 0) {
+    throw new EmailRateLimit();
+  }
+
+  return c
+    .prepare(
+      `INSERT INTO outbound_email (user_id, sender, subject, body, body_html)
+    VALUES (:id, :sender, :subject, :body, :body_html)
+    RETURNING
+      outbound_email_id as outboundEmailId,
+      user_id as userId,
+      sender as sender,
+      subject as subject,
+      body as body,
+      body_html as bodyHtml,
+      sent_at as sentAt,
+      created_at as createdAt
+    `
+    )
+    .get({
+      id: user.userId,
+      sender,
+      subject,
+      body,
+      body_html,
+    }) as OutboundEmail;
 };
