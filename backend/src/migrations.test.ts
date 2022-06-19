@@ -1,9 +1,8 @@
 import assert from "assert";
-import { randomUUID } from "crypto";
 import Connection from "better-sqlite3";
+import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "./config";
-import { open } from "./db";
 import {
   CannotRevertMigration,
   InvalidTargetVersion,

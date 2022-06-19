@@ -6,6 +6,12 @@ export class EmailRateLimit extends Error {
   }
 }
 
+export class NoRowsReturned extends Error {
+  constructor() {
+    super("query returned no rows");
+  }
+}
+
 export type User = {
   userId: number;
   userEmail: string;
@@ -32,6 +38,27 @@ export type OutboundEmail = {
   sentAt?: number;
   createdAt: number;
 };
+
+/* Looks up a user by id */
+export const lookupUser({ id }: { id: number): User => {
+  let c = open();
+
+  let user = c.prepare(
+    `SELECT
+      user_id as userId,
+      user_email as userEmail,
+      tz_offset as tzOffset,
+      created_at as createdAt
+    FROM user
+    WHERE user_id = :id`
+  ).get({ id }) as User;
+
+  if (!user) {
+    throw new NoRowsReturned();
+  }
+
+  return user;
+}
 
 /* Returns the user with the given email, creates them if they don't exist */
 export const getOrCreateUser = ({ email }: { email: string }): User => {
@@ -97,6 +124,10 @@ type QueueEmailArgs = {
   body_html?: string;
 };
 
+/** Queue an email to be sent
+* This method will fail if the user already has unsent email or if we have
+* sent them an email in the past 5 minutes
+*/
 export const queueEmail = ({
   sender,
   to,
@@ -146,3 +177,25 @@ export const queueEmail = ({
       body_html,
     }) as OutboundEmail;
 };
+
+/* Returns the next available unsent email */
+export const pollUnsentEmail = (): [OutboundEmail, User] => {
+  const email = c.prepare(
+    `SELECT
+      outbound_email_id as outboundEmailId,
+      user_id as userId,
+      sender as sender,
+      subject as subject,
+      body as body,
+      body_html as bodyHtml,
+      sent_at as sentAt,
+      created_at as createdAt
+    FROM outbound_email
+    WHERE sent_at is NULL
+    LIMIT 1`
+  ).get() as OutboundEmail;
+
+  const user = lookupUser(email.user_id);
+
+  return [email, user];
+}

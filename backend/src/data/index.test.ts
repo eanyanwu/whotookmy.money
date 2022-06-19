@@ -3,7 +3,12 @@ import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "../config";
 import { open } from "../db";
-import { getOrCreateUser, queueEmail, savePurchase, EmailRateLimit } from "./index";
+import {
+  EmailRateLimit,
+  getOrCreateUser,
+  queueEmail,
+  savePurchase,
+} from "./index";
 
 let FILE: string;
 
@@ -98,16 +103,20 @@ describe("queueEmail", () => {
       body_html: "<html>",
     });
 
-    assert.throws(() => queueEmail({
-      sender: "from@example.org",
-      to: "to@example.org",
-      subject: "subject",
-      body: "body",
-      body_html: "<html>",
-    }), EmailRateLimit);
+    assert.throws(
+      () =>
+        queueEmail({
+          sender: "from@example.org",
+          to: "to@example.org",
+          subject: "subject",
+          body: "body",
+          body_html: "<html>",
+        }),
+      EmailRateLimit
+    );
   });
 
-  it("fails to queue email if we sent one recently" , () => {
+  it("fails to queue email if we sent one recently", () => {
     queueEmail({
       sender: "from@example.org",
       to: "to@example.org",
@@ -117,15 +126,19 @@ describe("queueEmail", () => {
     });
 
     let c = open();
-    c.prepare(`UPDATE outbound_email SET sent_at = strftime('%s')`).run(); 
+    c.prepare(`UPDATE outbound_email SET sent_at = strftime('%s')`).run();
 
-    assert.throws(() => queueEmail({
-      sender: "from@example.org",
-      to: "to@example.org",
-      subject: "subject",
-      body: "body",
-      body_html: "<html>",
-    }), EmailRateLimit);
+    assert.throws(
+      () =>
+        queueEmail({
+          sender: "from@example.org",
+          to: "to@example.org",
+          subject: "subject",
+          body: "body",
+          body_html: "<html>",
+        }),
+      EmailRateLimit
+    );
   });
 
   it("queues email if we sent one more than 5 minutes ago", () => {
@@ -138,7 +151,7 @@ describe("queueEmail", () => {
     });
 
     let c = open();
-    c.prepare(`UPDATE outbound_email SET sent_at = strftime('%s') - 301`).run(); 
+    c.prepare(`UPDATE outbound_email SET sent_at = strftime('%s') - 301`).run();
 
     queueEmail({
       sender: "from@example.org",
@@ -148,7 +161,9 @@ describe("queueEmail", () => {
       body_html: "<html>",
     });
 
-    const count = c.prepare(`SELECT count(*) as count FROM outbound_email`).get().count;
+    const count = c
+      .prepare(`SELECT count(*) as count FROM outbound_email`)
+      .get().count;
     assert.equal(count, 2);
   });
 });
