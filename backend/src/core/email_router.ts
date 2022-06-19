@@ -37,7 +37,8 @@ class UnrecognizedBank extends Error {
   }
 }
 
-const handlePurchaseEmail = (email: InboundEmail) => {
+/* Parses a purchase alert and saves the transaction info to the database */
+const handlePurchaseAlert = (email: InboundEmail) => {
   const to = email.to;
   const from = email.from;
 
@@ -90,7 +91,7 @@ const routeEmail = (email: InboundEmail) => {
   };
 
   if (isPurchaseAlert(email)) {
-    handlePurchaseEmail(email);
+    handlePurchaseAlert(email);
   } else {
     throw new CouldNotRouteEmail();
   }
