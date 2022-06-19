@@ -1,6 +1,6 @@
-import config from "./config";
-import { Migrations, M } from "./migrations";
 import Connection from "better-sqlite3";
+import config from "./config";
+import { M, Migrations } from "./migrations";
 
 const SCHEMA: string = `
 CREATE TABLE IF NOT EXISTS user (

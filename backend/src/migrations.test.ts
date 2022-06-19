@@ -1,14 +1,14 @@
 import assert from "assert";
 import { randomUUID } from "crypto";
+import fs from "fs/promises";
 import config from "./config";
+import { open } from "./db";
 import {
-  M,
-  Migrations,
   CannotRevertMigration,
   InvalidTargetVersion,
+  M,
+  Migrations,
 } from "./migrations";
-import { open } from "./db";
-import fs from "fs/promises";
 
 describe("Database migrations", function () {
   let FILE: string;

@@ -1,8 +1,8 @@
 import assert from "assert";
-import config from "./config";
-import { open, open_and_init } from "./db";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
+import config from "./config";
+import { open, open_and_init } from "./db";
 
 describe("Database", function () {
   let FILE: string;
