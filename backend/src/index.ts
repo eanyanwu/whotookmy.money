@@ -1,10 +1,10 @@
 import config from "./config";
-import { open_and_init } from "./db";
+import { open } from "./db";
 import { info } from "./log";
 import { createServer } from "./server";
 
-// Migrate the database
-open_and_init();
+// Migrate the database if needed
+open();
 
 // Start the server
 const server = createServer();

@@ -2,7 +2,7 @@ import assert from "assert";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "../config";
-import { open, open_and_init } from "../db";
+import { open } from "../db";
 import { getOrCreateUser, queueEmail, savePurchase, EmailRateLimit } from "./index";
 
 let FILE: string;
@@ -10,7 +10,7 @@ let FILE: string;
 beforeEach(function () {
   FILE = `${randomUUID()}.db`;
   config.set("server.db_file", FILE);
-  open_and_init();
+  open();
 });
 
 afterEach(async function () {
