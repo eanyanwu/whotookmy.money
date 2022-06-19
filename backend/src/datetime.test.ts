@@ -16,7 +16,7 @@ describe("parseRfc2822", () => {
 
 describe("toUnixTimestamp", () => {
   it("converts a date to a Unix timestamp", () => {
-    let date = new Date(2022, 5, 18, 13, 21, 27);
+    let date = new Date(Date.UTC(2022, 5, 18, 17, 21, 27));
     let timestamp = toUnixTimestamp(date);
 
     assert.equal(timestamp, 1655572887);
