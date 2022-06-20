@@ -11,8 +11,7 @@ import { elapsed, info, timer } from "./log";
 const router = setup_router({
   ignoreTrailingSlash: true,
   defaultRoute: (req, res) => {
-    res.statusCode = 404;
-    res.end();
+    return Promise.resolve({ statusCode: 404 });
   },
 });
 
