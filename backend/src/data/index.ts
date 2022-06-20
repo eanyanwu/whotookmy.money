@@ -182,7 +182,7 @@ export const queueEmail = ({
 };
 
 /* Returns the next available unsent email */
-export const pollUnsentEmail = (): [OutboundEmail, User] => {
+export const pollUnsentEmail = (): [OutboundEmail, User] | undefined => {
   const c = open();
   const email = c
     .prepare(
@@ -199,9 +199,24 @@ export const pollUnsentEmail = (): [OutboundEmail, User] => {
     WHERE sent_at is NULL
     LIMIT 1`
     )
-    .get() as OutboundEmail;
+    .get();
+
+  if (!email) {
+    return undefined;
+  }
+
 
   const user = lookupUser({ id: email.userId });
 
   return [email, user];
+};
+
+/* Marks and email as sent */
+export const markEmailSent = (e: OutboundEmail) => {
+  const c = open();
+
+  c.prepare(
+    `UPDATE outbound_email SET sent_at = strftime('%s')
+    WHERE outbound_email_id = ?`
+  ).run(e.outboundEmailId);
 };

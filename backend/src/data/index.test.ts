@@ -2,7 +2,7 @@ import assert from "assert";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "../config";
-import { open } from "../db";
+import { open_and_init, open } from "../db";
 import {
   EmailRateLimit,
   getOrCreateUser,
@@ -15,7 +15,7 @@ let FILE: string;
 beforeEach(function () {
   FILE = `${randomUUID()}.db`;
   config.set("server.db_file", FILE);
-  open();
+  open_and_init();
 });
 
 afterEach(async function () {

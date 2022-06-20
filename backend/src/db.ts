@@ -45,14 +45,18 @@ CREATE TABLE user_report_outbound_email (
 
 const MIGRATIONS: M[] = [];
 
-/* Migrates the database if necessary, registers hooks and returns a connection to it */
+/* Creates and returns a connection to the database */
 export const open = () => {
   const file = config.get("server.db_file");
   const conn = new Connection(file);
   conn.pragma("foreign_keys = ON");
+  return conn;
+};
+
+/* Migrates the database if necessary, registers hooks and returns a connection to it */
+export const open_and_init = () => {
+    const conn = open();
   const migrations = new Migrations([M.up(SCHEMA), ...MIGRATIONS]);
-
   migrations.toLatest(conn);
-
   return conn;
 };

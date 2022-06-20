@@ -3,8 +3,9 @@ import http from "http";
 import { sendHttpRequestAsync } from "./http_request";
 import { readRequestPayload } from "./server";
 
-/* Setting up a utility method `setupServerAsync` to allow me to spin up a test
- * server for my requests to hit*/
+/* Setting up a utility method `setupServerAsync`  to spin up a test server for
+ * requests to hit*/
+
 type OnListeningCallback = (err?: Error, server?: http.Server) => void;
 type OnRequestCallback = (
   req: http.IncomingMessage,
@@ -28,8 +29,8 @@ const setupServer = (
   });
 };
 
-// Promisified version of `setupServer`, that allows me to `await` until the
-// server is listneing before moving on.
+// Promisified version of `setupServer`  Promise resolves (with the server
+// instance) once the server is up and listening
 const setupServerAsync = (
   onRequest: OnRequestCallback
 ): Promise<http.Server> => {

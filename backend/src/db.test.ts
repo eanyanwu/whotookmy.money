@@ -2,7 +2,7 @@ import assert from "assert";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "./config";
-import { open } from "./db";
+import { open_and_init } from "./db";
 
 describe("Database", function () {
   let FILE: string;
@@ -19,8 +19,8 @@ describe("Database", function () {
     config.set("server.db_file", config.get("server.db_file"));
   });
 
-  it("open() migrates database", function () {
-    const conn = open();
+  it("open_and_init() migrates database", function () {
+    const conn = open_and_init();
 
     const tables = conn.pragma("table_list");
 
