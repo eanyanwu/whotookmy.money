@@ -55,7 +55,7 @@ export const open = () => {
 
 /* Migrates the database if necessary, registers hooks and returns a connection to it */
 export const open_and_init = () => {
-    const conn = open();
+  const conn = open();
   const migrations = new Migrations([M.up(SCHEMA), ...MIGRATIONS]);
   migrations.toLatest(conn);
   return conn;

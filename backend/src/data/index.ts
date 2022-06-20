@@ -205,7 +205,6 @@ export const pollUnsentEmail = (): [OutboundEmail, User] | undefined => {
     return undefined;
   }
 
-
   const user = lookupUser({ id: email.userId });
 
   return [email, user];

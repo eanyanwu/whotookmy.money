@@ -2,7 +2,7 @@ import assert from "assert";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "../config";
-import { open_and_init, open } from "../db";
+import { open, open_and_init } from "../db";
 import {
   EmailRateLimit,
   getOrCreateUser,

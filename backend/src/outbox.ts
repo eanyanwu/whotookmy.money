@@ -45,7 +45,7 @@ export const createOutboxMonitor = () => {
         continue;
       }
 
-      const [email, user] = maybeEmail; 
+      const [email, user] = maybeEmail;
       info({ to: user.userEmail, from: email.sender }, "sending email");
       const json = JSON.stringify(toOutboundPostmarkEmail(email, user));
       try {
@@ -76,7 +76,6 @@ export const createOutboxMonitor = () => {
         // Not worth trashing the server, just log and move on
         error("network error while sending email: ", e);
       }
-
     }
   };
 
