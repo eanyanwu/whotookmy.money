@@ -63,8 +63,12 @@ export const lookupUser = ({ id }: { id: number }): User => {
   return user;
 };
 
-/* Returns the user with the given email, creates them if they don't exist */
-export const getOrCreateUser = ({ email }: { email: string }): User => {
+/* Bootrap a potentially first-time user
+* This function is idempotent
+* Returns the user with the given email, creates them if they don't exist 
+* Sends them a welcome email if we haven't sent one before
+* */
+export const bootstrapUser = ({ email }: { email: string }): User => {
   let conn = open();
 
   conn
@@ -74,7 +78,7 @@ export const getOrCreateUser = ({ email }: { email: string }): User => {
     )
     .run({ email });
 
-  return conn
+  const user = conn
     .prepare(
       `SELECT
             user_id as userId,
@@ -85,6 +89,20 @@ export const getOrCreateUser = ({ email }: { email: string }): User => {
         WHERE user_email = :email`
     )
     .get({ email }) as User;
+
+  // Sqlite doesn't have a bool type, it will just return 0 or 1 here 
+  const sentWelcomeEmail  = Boolean(conn
+    .prepare(
+      `SELECT count(*) > 0 as sent
+      FROM outbound_email
+      WHERE user_id = ? AND subject LIKE '%Welcome%'`
+    ).run(user.userId).sent);
+
+  if (!sentWelcomeEmail) {
+    // Queue a welcome email
+  }
+
+  return user;
 };
 
 type SavePurchaseArgs = {
@@ -103,7 +121,7 @@ export const savePurchase = ({
 }: SavePurchaseArgs): Purchase => {
   const conn = open();
 
-  const user = getOrCreateUser({ email });
+  const user = bootstrapUser({ email });
 
   return conn
     .prepare(
@@ -140,7 +158,7 @@ export const queueEmail = ({
 }: QueueEmailArgs): OutboundEmail => {
   const c = open();
 
-  const user = getOrCreateUser({ email: to });
+  const user = bootstrapUser({ email: to });
 
   const count_unsent = c
     .prepare(

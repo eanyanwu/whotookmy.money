@@ -14,7 +14,7 @@ const config = convict({
   wtmm_mac_key: {
     doc: "Key used to generate message authentication codes",
     default: "RpWmx32XfrKLlHMzdiDVnSSIjZX6gzQw3YKY9Tf+Nts=",
-    env: "WTMM_MAC_KEY"
+    env: "WTMM_MAC_KEY",
   },
   server: {
     db_file: {

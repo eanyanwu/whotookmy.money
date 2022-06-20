@@ -5,7 +5,7 @@ import config from "../config";
 import { open, open_and_init } from "../db";
 import {
   EmailRateLimit,
-  getOrCreateUser,
+  bootstrapUser,
   queueEmail,
   savePurchase,
 } from "./index";
@@ -23,9 +23,9 @@ afterEach(async function () {
   config.set("server.db_file", config.get("server.db_file"));
 });
 
-describe("getOrCreateUser", () => {
+describe("bootstrapUser", () => {
   it("creates new user", () => {
-    const user = getOrCreateUser({ email: "person@example.org" });
+    const user = bootstrapUser({ email: "person@example.org" });
 
     const c = open();
     const count = c.prepare(`SELECT count(*) as count from user`).get().count;
@@ -42,7 +42,7 @@ describe("getOrCreateUser", () => {
       VALUES ('person@example.org', 13)`
     ).run();
 
-    const user = getOrCreateUser({ email: "person@example.org" });
+    const user = bootstrapUser({ email: "person@example.org" });
 
     const count = c.prepare(`SELECT count(*) as count from user`).get().count;
     assert.equal(count, 1);
