@@ -6,6 +6,11 @@ const config = convict({
     default: "dev.whotookmy.money",
     env: "EMAIL_DOMAIN",
   },
+  postmark_token: {
+    doc: "Token for using the postmark API",
+    default: "POSTMARK_API_TEST",
+    env: "POSTMARK_API_TOKEN",
+  },
   server: {
     db_file: {
       doc: "Database file name",

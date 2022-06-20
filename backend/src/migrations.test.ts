@@ -1,8 +1,8 @@
 import assert from "assert";
+import Connection from "better-sqlite3";
 import { randomUUID } from "crypto";
 import fs from "fs/promises";
 import config from "./config";
-import { open } from "./db";
 import {
   CannotRevertMigration,
   InvalidTargetVersion,
@@ -24,14 +24,14 @@ describe("Database migrations", function () {
   });
 
   it("can migrate up", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([M.up("CREATE TABLE m1 (a, b, c);")]);
     migrations.toLatest(conn);
     assert.equal(conn.pragma("user_version", { simple: true }), 1);
   });
 
   it("can migrate down", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([
       M.up("CREATE TABLE m1 (a,b,c);").down("DROP TABLE m1;"),
     ]);
@@ -42,27 +42,27 @@ describe("Database migrations", function () {
   });
 
   it("doesn't fail with empty migrations", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([]);
     migrations.toLatest(conn);
     assert.equal(conn.pragma("user_version", { simple: true }), 0);
   });
 
   it("can't migrate when given an invalid migration", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([]);
     assert.throws(() => migrations.goto(conn, 10), InvalidTargetVersion);
   });
 
   it("can't migration when a down operation has not been defined", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([M.up("CREATE TABLE m1 (a, b, c);")]);
     migrations.toLatest(conn);
     assert.throws(() => migrations.goto(conn, 0), CannotRevertMigration);
   });
 
   it("database is left untouched on forward migration failure", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([
       M.up("CREATE TABLE m1 (a, b);"),
       M.up("CREATE TABLE m1 (a);"),
@@ -76,7 +76,7 @@ describe("Database migrations", function () {
   });
 
   it("database is left untouched on reverse migration failure", function () {
-    const conn = open();
+    const conn = new Connection(FILE);
     let migrations = new Migrations([
       M.up("CREATE TABLE m1 (a, b)").down("DROP TABLE m2;"),
     ]);

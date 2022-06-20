@@ -1,23 +1,29 @@
 import assert from "assert";
 import { randomUUID } from "crypto";
+import fs from "fs/promises";
 import config from "../config";
 import { open, open_and_init } from "../db";
-import { getOrCreateUser, savePurchase } from "./index";
+import {
+  EmailRateLimit,
+  getOrCreateUser,
+  queueEmail,
+  savePurchase,
+} from "./index";
+
+let FILE: string;
+
+beforeEach(function () {
+  FILE = `${randomUUID()}.db`;
+  config.set("server.db_file", FILE);
+  open_and_init();
+});
+
+afterEach(async function () {
+  await fs.rm(FILE);
+  config.set("server.db_file", config.get("server.db_file"));
+});
 
 describe("getOrCreateUser", () => {
-  let FILE: string;
-
-  beforeEach(function () {
-    FILE = `${randomUUID()}.db`;
-    config.set("server.db_file", FILE);
-    open_and_init();
-  });
-
-  afterEach(async function () {
-    //await fs.rm(FILE);
-    config.set("server.db_file", config.get("server.db_file"));
-  });
-
   it("creates new user", () => {
     const user = getOrCreateUser({ email: "person@example.org" });
 
@@ -66,5 +72,98 @@ describe("savePurchase", () => {
     assert.equal(purchase.merchant, "AIRBNB");
     assert.equal(purchase.timestamp, 1);
     assert.ok(purchase.created_at);
+  });
+});
+
+describe("queueEmail", () => {
+  it("queues email", () => {
+    const email = queueEmail({
+      sender: "from@example.org",
+      to: "to@example.org",
+      subject: "subject",
+      body: "body",
+      body_html: "<html>",
+    });
+
+    assert.equal(email.sender, "from@example.org");
+    assert.equal(email.userId, 1);
+    assert.equal(email.subject, "subject");
+    assert.equal(email.body, "body");
+    assert.equal(email.bodyHtml, "<html>");
+    assert.equal(email.sentAt, null);
+    assert.ok(email.createdAt);
+  });
+
+  it("fails to queue email when an unsent one already exists", () => {
+    queueEmail({
+      sender: "from@example.org",
+      to: "to@example.org",
+      subject: "subject",
+      body: "body",
+      body_html: "<html>",
+    });
+
+    assert.throws(
+      () =>
+        queueEmail({
+          sender: "from@example.org",
+          to: "to@example.org",
+          subject: "subject",
+          body: "body",
+          body_html: "<html>",
+        }),
+      EmailRateLimit
+    );
+  });
+
+  it("fails to queue email if we sent one recently", () => {
+    queueEmail({
+      sender: "from@example.org",
+      to: "to@example.org",
+      subject: "subject",
+      body: "body",
+      body_html: "<html>",
+    });
+
+    let c = open();
+    c.prepare(`UPDATE outbound_email SET sent_at = strftime('%s')`).run();
+
+    assert.throws(
+      () =>
+        queueEmail({
+          sender: "from@example.org",
+          to: "to@example.org",
+          subject: "subject",
+          body: "body",
+          body_html: "<html>",
+        }),
+      EmailRateLimit
+    );
+  });
+
+  it("queues email if we sent one more than 5 minutes ago", () => {
+    queueEmail({
+      sender: "from@example.org",
+      to: "to@example.org",
+      subject: "subject",
+      body: "body",
+      body_html: "<html>",
+    });
+
+    let c = open();
+    c.prepare(`UPDATE outbound_email SET sent_at = strftime('%s') - 301`).run();
+
+    queueEmail({
+      sender: "from@example.org",
+      to: "to@example.org",
+      subject: "subject",
+      body: "body",
+      body_html: "<html>",
+    });
+
+    const count = c
+      .prepare(`SELECT count(*) as count FROM outbound_email`)
+      .get().count;
+    assert.equal(count, 2);
   });
 });
