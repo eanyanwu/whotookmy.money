@@ -7,6 +7,7 @@ WorkingDirectory=%h/{{ application_folder }}/
 ExecStart=%h/{{ application_folder }}/wtmm_server
 Environment="PORT={{ wtmm_server_port }}"
 Environment="EMAIL_DOMAIN={{ email_domain }}"
+Environment="WTMM_MAC_KEY={{ wtmm_mac_key }}"
 Restart=always
 RestartSec=14s
 StandardInput=null
