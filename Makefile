@@ -14,7 +14,7 @@ build:
 	cd backend && \
 		npm install && \
 		npm run build && \
-		pkg --target node18-linux-x64 --output pkg/wtmm_server dist/index.js
+		pkg --target latest-linux-x64 --output pkg/wtmm_server dist/index.js
 
 # Just in case I start doing anything special for release builds 
 build-release: build
