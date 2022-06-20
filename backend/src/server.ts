@@ -17,7 +17,9 @@ const router = setup_router({
 });
 
 /* Reads and returns the request payload as a `Buffer` */
-const readRequestPayload = (req: IncomingMessage): Promise<BufferType> => {
+export const readRequestPayload = (
+  req: IncomingMessage
+): Promise<BufferType> => {
   return new Promise((resolve, reject) => {
     const chunks: BufferType[] = [];
     const onError = (e: Error) => {

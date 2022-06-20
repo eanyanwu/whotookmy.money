@@ -40,25 +40,28 @@ export type OutboundEmail = {
 };
 
 /* Looks up a user by id */
-export const lookupUser({ id }: { id: number): User => {
+
+export const lookupUser = ({ id }: { id: number }): User => {
   let c = open();
 
-  let user = c.prepare(
-    `SELECT
+  let user = c
+    .prepare(
+      `SELECT
       user_id as userId,
       user_email as userEmail,
       tz_offset as tzOffset,
       created_at as createdAt
     FROM user
     WHERE user_id = :id`
-  ).get({ id }) as User;
+    )
+    .get({ id }) as User;
 
   if (!user) {
     throw new NoRowsReturned();
   }
 
   return user;
-}
+};
 
 /* Returns the user with the given email, creates them if they don't exist */
 export const getOrCreateUser = ({ email }: { email: string }): User => {
@@ -125,9 +128,9 @@ type QueueEmailArgs = {
 };
 
 /** Queue an email to be sent
-* This method will fail if the user already has unsent email or if we have
-* sent them an email in the past 5 minutes
-*/
+ * This method will fail if the user already has unsent email or if we have
+ * sent them an email in the past 5 minutes
+ */
 export const queueEmail = ({
   sender,
   to,
@@ -180,8 +183,10 @@ export const queueEmail = ({
 
 /* Returns the next available unsent email */
 export const pollUnsentEmail = (): [OutboundEmail, User] => {
-  const email = c.prepare(
-    `SELECT
+  const c = open();
+  const email = c
+    .prepare(
+      `SELECT
       outbound_email_id as outboundEmailId,
       user_id as userId,
       sender as sender,
@@ -193,9 +198,10 @@ export const pollUnsentEmail = (): [OutboundEmail, User] => {
     FROM outbound_email
     WHERE sent_at is NULL
     LIMIT 1`
-  ).get() as OutboundEmail;
+    )
+    .get() as OutboundEmail;
 
-  const user = lookupUser(email.user_id);
+  const user = lookupUser({ id: email.userId });
 
   return [email, user];
-}
+};

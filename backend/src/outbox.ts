@@ -1,8 +1,9 @@
-import { pollUnsentEmail, type User, type OutboundEmail } from "./data";
-import { info } from "./log";
 import config from "./config";
+import { pollUnsentEmail, type OutboundEmail, type User } from "./data";
+import { info } from "./log";
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(ms, resolve));
+const sleep = (ms: number) =>
+  new Promise((resolve, reject) => setTimeout(resolve, ms));
 
 type OutboundPostmarkEmail = {
   From: string;
@@ -12,7 +13,10 @@ type OutboundPostmarkEmail = {
   HtmlBody: string;
 };
 
-const toOutboundPostmarkEmail = (e: OutboundEmail, u: User): OutboundPostmarkEmail => {
+const toOutboundPostmarkEmail = (
+  e: OutboundEmail,
+  u: User
+): OutboundPostmarkEmail => {
   return {
     From: e.sender,
     To: u.userEmail,
@@ -28,15 +32,12 @@ export const createOutboxMonitor = () => {
     const token = config.get("postmark_token");
 
     while (true) {
-      for (const [email, user] of pollUnsentEmail() {
-        info({ to: user.userEmail, from: email.sender }, "sending email");
-        const req = await fetch("https://api.postmarkapp.com/email", {
-        });
-      }
+      const [email, user] = pollUnsentEmail();
+      info({ to: user.userEmail, from: email.sender }, "sending email");
     }
   };
 
   return {
-    start
+    start,
   };
-}
+};
