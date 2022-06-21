@@ -1,5 +1,8 @@
+import config from "../config";
+import { generateMac } from "../crypto";
 import { dollarStringToCents } from "../currency";
-import { savePurchase } from "../data";
+import type { User } from "../data";
+import { getOrCreateUser, queueEmail, savePurchase } from "../data";
 import { info } from "../log";
 
 /* Known emails */
@@ -38,8 +41,7 @@ class UnrecognizedBank extends Error {
 }
 
 /* Parses a purchase alert and saves the transaction info to the database */
-const handlePurchaseAlert = (email: InboundEmail) => {
-  const to = email.to;
+const handlePurchaseAlert = (user: User, email: InboundEmail) => {
   const from = email.from;
 
   const lines = email["body"].split("\n");
@@ -75,7 +77,24 @@ const handlePurchaseAlert = (email: InboundEmail) => {
 
   const amount = dollarStringToCents(amountStr);
 
-  savePurchase({ email: to, amount, merchant, timestamp: email.timestamp });
+  savePurchase({ user, amount, merchant, timestamp: email.timestamp });
+};
+
+const sendWelcomeEmail = (user: User) => {
+  const domain = config.get("email_domain");
+  const qs = `email=${user.userEmail}&mac=${generateMac(user.userEmail)}`;
+  const dashboard = `https://${domain}/dashboard?${qs}`;
+  const welcome = `
+  ~~~
+  Here is the link to your dashboard: ${dashboard}
+  ~~~`;
+
+  queueEmail({
+    sender: `info@${domain}`,
+    to: user.userEmail,
+    subject: "Welcome!",
+    body: welcome,
+  });
 };
 
 const routeEmail = (email: InboundEmail) => {
@@ -90,8 +109,19 @@ const routeEmail = (email: InboundEmail) => {
     return subject.includes("transaction") || subject.includes("card");
   };
 
-  if (isPurchaseAlert(email)) {
-    handlePurchaseAlert(email);
+  const sentToInfo = (email: InboundEmail) => {
+    return email.to.startsWith("info@");
+  };
+
+  if (sentToInfo(email)) {
+    const [user, _] = getOrCreateUser({ email: email.from });
+    sendWelcomeEmail(user);
+  } else if (isPurchaseAlert(email)) {
+    const [user, isNew] = getOrCreateUser({ email: email.from });
+    if (isNew) {
+      sendWelcomeEmail(user);
+    }
+    handlePurchaseAlert(user, email);
   } else {
     throw new CouldNotRouteEmail();
   }

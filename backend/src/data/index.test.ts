@@ -5,9 +5,11 @@ import config from "../config";
 import { open, open_and_init } from "../db";
 import {
   EmailRateLimit,
-  bootstrapUser,
+  NoRowsReturned,
+  getOrCreateUser,
   queueEmail,
   savePurchase,
+  lookupUser,
 } from "./index";
 
 let FILE: string;
@@ -23,9 +25,9 @@ afterEach(async function () {
   config.set("server.db_file", config.get("server.db_file"));
 });
 
-describe("bootstrapUser", () => {
+describe("getOrCreateUser", () => {
   it("creates new user", () => {
-    const user = bootstrapUser({ email: "person@example.org" });
+    const [user, isNew] = getOrCreateUser({ email: "person@example.org" });
 
     const c = open();
     const count = c.prepare(`SELECT count(*) as count from user`).get().count;
@@ -33,6 +35,7 @@ describe("bootstrapUser", () => {
     assert.equal(count, 1);
     assert.equal(user.userEmail, "person@example.org");
     assert.equal(user.tzOffset, 0);
+    assert.equal(isNew, true);
   });
 
   it("returns existing user", () => {
@@ -42,19 +45,41 @@ describe("bootstrapUser", () => {
       VALUES ('person@example.org', 13)`
     ).run();
 
-    const user = bootstrapUser({ email: "person@example.org" });
+    const [user, isNew] = getOrCreateUser({ email: "person@example.org" });
 
     const count = c.prepare(`SELECT count(*) as count from user`).get().count;
     assert.equal(count, 1);
     assert.equal(user.tzOffset, 13);
+    assert.equal(isNew, false);
+  });
+});
+
+describe("lookupUser", () => {
+  it("fails if user does not exist", () => {
+    assert.throws(() => lookupUser({ id: 1 }), NoRowsReturned);
+  });
+
+  it("finds user", () => {
+    const c = open();
+
+    c.prepare(
+      `INSERT INTO user (user_email, tz_offset)
+      VALUES ('person@example.org', 12)`
+    ).run();
+
+    const user = lookupUser({ id: 1});
+
+    assert.equal(user.userEmail, "person@example.org");
+    assert.equal(user.tzOffset, 12);
   });
 });
 
 describe("savePurchase", () => {
   it("creates a new purchase for user", () => {
     const c = open();
+    const [user, _] = getOrCreateUser({ email: "person@example.org" });
     savePurchase({
-      email: "person@example.org",
+      user,
       amount: 1000,
       merchant: "AIRBNB",
       timestamp: 1,
