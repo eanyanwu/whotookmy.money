@@ -47,7 +47,7 @@ const MIGRATIONS: M[] = [];
 
 /* Creates and returns a connection to the database */
 export const open = () => {
-  const file = config.get("server.db_file");
+  const file = config.get("server.dbFile");
   const conn = new Connection(file);
   conn.pragma("foreign_keys = ON");
   return conn;

@@ -9,14 +9,14 @@ describe("Database", function () {
 
   beforeEach(function () {
     FILE = randomUUID();
-    config.set("server.db_file", FILE);
+    config.set("server.dbFile", FILE);
   });
 
   afterEach(async function () {
     try {
       await fs.rm(FILE);
     } catch (_) {}
-    config.set("server.db_file", config.get("server.db_file"));
+    config.set("server.dbFile", config.get("server.dbFile"));
   });
 
   it("open_and_init() migrates database", function () {

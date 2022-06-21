@@ -12,7 +12,6 @@ describe("routeEmail", () => {
         tzOffset: 0,
         subject: "",
         messageId: "",
-        body: "",
       });
     }, CouldNotRouteEmail);
   });
@@ -26,7 +25,6 @@ describe("routeEmail", () => {
       tzOffset: 0,
       subject: "",
       messageId: "",
-      body: "",
     });
 
     const res = c.prepare(`SELECT subject, body FROM outbound_email`).get();

@@ -18,13 +18,13 @@ let FILE: string;
 
 beforeEach(function () {
   FILE = `${randomUUID()}.db`;
-  config.set("server.db_file", FILE);
+  config.set("server.dbFile", FILE);
   open_and_init();
 });
 
 afterEach(async function () {
   await fs.rm(FILE);
-  config.set("server.db_file", config.get("server.db_file"));
+  config.set("server.dbFile", config.get("server.dbFile"));
 });
 
 describe("getOrCreateUser", () => {

@@ -1,23 +1,23 @@
 import convict from "convict";
 
 const config = convict({
-  email_domain: {
+  emailDomain: {
     doc: "The domain our application acts as",
     default: "dev.whotookmy.money",
     env: "EMAIL_DOMAIN",
   },
-  postmark_token: {
+  postmarkToken: {
     doc: "Token for using the postmark API",
     default: "POSTMARK_API_TEST",
     env: "POSTMARK_API_TOKEN",
   },
-  wtmm_mac_key: {
+  wtmmMacKey: {
     doc: "Key used to generate message authentication codes",
     default: "RpWmx32XfrKLlHMzdiDVnSSIjZX6gzQw3YKY9Tf+Nts=",
     env: "WTMM_MAC_KEY",
   },
   server: {
-    db_file: {
+    dbFile: {
       doc: "Database file name",
       default: "wtmm.db",
       env: "DB_FILE",

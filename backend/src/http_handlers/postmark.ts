@@ -117,7 +117,7 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
   const hasHtmlBody = e["HtmlBody"].trim() !== "";
   const hasTextBody = e["TextBody"].trim() !== "";
 
-  let emailBody: string | null = null;
+  let emailBody: string | undefined = undefined;
 
   if (hasHtmlBody) {
     const htmlBody = extractHtmlBody(e["HtmlBody"]);
@@ -131,14 +131,15 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
   }
 
   if (!emailBody) {
-    throw new CouldNotParseEmail();
+    emailBody = undefined;
+  } else {
+    emailBody = emailBody
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s != "")
+      .join("\n");
   }
 
-  emailBody = emailBody
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s != "")
-    .join("\n");
 
   return {
     to: to.toLowerCase(),
