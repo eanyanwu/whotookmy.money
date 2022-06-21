@@ -117,7 +117,9 @@ const routeEmail = (email: InboundEmail) => {
     const [user, _] = getOrCreateUser({ email: email.from });
     sendWelcomeEmail(user);
   } else if (isPurchaseAlert(email)) {
-    const [user, isNew] = getOrCreateUser({ email: email.from });
+    // Purchase alerts are forwarded to us from the user.
+    // So in the email, `From` is their bank and `To` is the user
+    const [user, isNew] = getOrCreateUser({ email: email.to });
     if (isNew) {
       sendWelcomeEmail(user);
     }
