@@ -10,6 +10,8 @@ import {
   queueEmail,
   savePurchase,
   lookupUser,
+  pollUnsentEmail,
+  markEmailSent,
 } from "./index";
 
 let FILE: string;
@@ -190,5 +192,38 @@ describe("queueEmail", () => {
       .prepare(`SELECT count(*) as count FROM outbound_email`)
       .get().count;
     assert.equal(count, 2);
+  });
+});
+
+describe("markEmailSent & pollUnsentEmail", () => {
+  it("the two functions work together predictably", () => {
+    let c = open();
+    c.exec(
+      `INSERT INTO user (user_email)
+      VALUES ('person@example.org');
+
+      INSERT INTO outbound_email (user_id, sender, subject, body)
+      VALUES
+      (1, 'sender1', 'subject1', 'body1'),
+      (1, 'sender2', 'subject2', 'body2')`
+    );
+
+    // Multiple calls yield the same email if it has not been sent
+    let [first] = pollUnsentEmail()!;
+    let [second] = pollUnsentEmail()!;
+    assert.deepStrictEqual(first, second);
+
+    assert.equal(first.sender, "sender1");
+
+    markEmailSent(first);
+
+    // Calling poll should yield a differnt email now
+    let [third] = pollUnsentEmail()!;
+    assert.notEqual(third.outboundEmailId, first.outboundEmailId);
+    assert.equal(third.sender, "sender2");
+
+    markEmailSent(third);
+
+    assert.equal(pollUnsentEmail(), undefined);
   });
 });
