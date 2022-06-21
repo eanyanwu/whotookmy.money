@@ -15,8 +15,8 @@
       dev: 5001
       prod: 5000 
     env_email_domain_map:
-      dev: "@dev.whotookmy.money"
-      prod: "@whotookmy.money"
+      dev: "dev.whotookmy.money"
+      prod: "whotookmy.money"
     env_wtmm_mac_key_map:
       dev: RpWmx32XfrKLlHMzdiDVnSSIjZX6gzQw3YKY9Tf+Nts=
       prod: "{{ lookup('env', 'WTMM_MAC_KEY') }}"

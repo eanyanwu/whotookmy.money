@@ -22,13 +22,13 @@ export type InboundEmail = {
   body: string;
 };
 
-class PurchaseEmailError extends Error {
+export class PurchaseEmailError extends Error {
   constructor() {
     super("could not parse purchase email");
   }
 }
 
-class CouldNotRouteEmail extends Error {
+export class CouldNotRouteEmail extends Error {
   constructor() {
     super("could not determine where to route email");
   }
@@ -86,7 +86,8 @@ const sendWelcomeEmail = (user: User) => {
   const dashboard = `https://${domain}/dashboard?${qs}`;
   const welcome = `
   ~~~
-  Here is the link to your dashboard: ${dashboard}
+  Here is the link to your dashboard:
+  ${dashboard}
   ~~~`;
 
   queueEmail({
@@ -97,7 +98,7 @@ const sendWelcomeEmail = (user: User) => {
   });
 };
 
-const routeEmail = (email: InboundEmail) => {
+export const routeEmail = (email: InboundEmail) => {
   const msgid = email.messageId;
   const from = email.from;
   const to = email.to;
@@ -110,7 +111,8 @@ const routeEmail = (email: InboundEmail) => {
   };
 
   const sentToInfo = (email: InboundEmail) => {
-    return email.to.startsWith("info@");
+    const domain = config.get("email_domain");
+    return email.to === `info@${domain}`;
   };
 
   if (sentToInfo(email)) {
@@ -128,5 +130,3 @@ const routeEmail = (email: InboundEmail) => {
     throw new CouldNotRouteEmail();
   }
 };
-
-export { routeEmail };

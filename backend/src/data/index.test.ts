@@ -5,13 +5,13 @@ import config from "../config";
 import { open, open_and_init } from "../db";
 import {
   EmailRateLimit,
-  NoRowsReturned,
   getOrCreateUser,
+  lookupUser,
+  markEmailSent,
+  NoRowsReturned,
+  pollUnsentEmail,
   queueEmail,
   savePurchase,
-  lookupUser,
-  pollUnsentEmail,
-  markEmailSent,
 } from "./index";
 
 let FILE: string;
@@ -69,7 +69,7 @@ describe("lookupUser", () => {
       VALUES ('person@example.org', 12)`
     ).run();
 
-    const user = lookupUser({ id: 1});
+    const user = lookupUser({ id: 1 });
 
     assert.equal(user.userEmail, "person@example.org");
     assert.equal(user.tzOffset, 12);
