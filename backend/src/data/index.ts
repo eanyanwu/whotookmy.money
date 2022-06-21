@@ -63,18 +63,25 @@ export const lookupUser = ({ id }: { id: number }): User => {
   return user;
 };
 
-/* Returns the user with the given email, creates them if they don't exist */
-export const getOrCreateUser = ({ email }: { email: string }): User => {
+/*
+ * Returns the user with the given email, creates them if they don't exist
+ * The second part of the tuple indicates if the user was actually created or not
+ * */
+export const getOrCreateUser = ({
+  email,
+}: {
+  email: string;
+}): [User, boolean] => {
   let conn = open();
 
-  conn
+  const info = conn
     .prepare(
       `INSERT INTO user (user_email) VALUES (:email)
         ON CONFLICT DO NOTHING`
     )
     .run({ email });
 
-  return conn
+  const user = conn
     .prepare(
       `SELECT
             user_id as userId,
@@ -85,10 +92,12 @@ export const getOrCreateUser = ({ email }: { email: string }): User => {
         WHERE user_email = :email`
     )
     .get({ email }) as User;
+
+  return [user, info.changes > 0];
 };
 
 type SavePurchaseArgs = {
-  email: string;
+  user: User;
   amount: number;
   merchant: string;
   timestamp: number;
@@ -96,14 +105,12 @@ type SavePurchaseArgs = {
 
 /* Creates a new purchase for the user */
 export const savePurchase = ({
-  email,
+  user,
   amount,
   merchant,
   timestamp,
 }: SavePurchaseArgs): Purchase => {
   const conn = open();
-
-  const user = getOrCreateUser({ email });
 
   return conn
     .prepare(
@@ -140,7 +147,7 @@ export const queueEmail = ({
 }: QueueEmailArgs): OutboundEmail => {
   const c = open();
 
-  const user = getOrCreateUser({ email: to });
+  const [user, _] = getOrCreateUser({ email: to });
 
   const count_unsent = c
     .prepare(

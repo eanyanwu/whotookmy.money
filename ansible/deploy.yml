@@ -15,15 +15,18 @@
       dev: 5001
       prod: 5000 
     env_email_domain_map:
-      dev: "@dev.whotookmy.money"
-      prod: "@whotookmy.money"
+      dev: "dev.whotookmy.money"
+      prod: "whotookmy.money"
+    env_wtmm_mac_key_map:
+      dev: RpWmx32XfrKLlHMzdiDVnSSIjZX6gzQw3YKY9Tf+Nts=
+      prod: "{{ lookup('env', 'WTMM_MAC_KEY') }}"
 
     postmark_api_token: "{{ env_api_token_map[env] }}"
     application_name: "{{ env_application_name_map[env] }}"
     application_folder: ".{{ application_name }}"
     wtmm_server_port: "{{ env_wtmm_server_port_map[env] }}"
     email_domain: "{{ env_email_domain_map[env] }}"
-
+    wtmm_mac_key: "{{ env_wtmm_mac_key_map[env] }}"
 
   roles:
     - deploy

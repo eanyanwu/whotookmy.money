@@ -1,5 +1,8 @@
+import config from "../config";
+import { generateMac } from "../crypto";
 import { dollarStringToCents } from "../currency";
-import { savePurchase } from "../data";
+import type { User } from "../data";
+import { getOrCreateUser, queueEmail, savePurchase } from "../data";
 import { info } from "../log";
 
 /* Known emails */
@@ -19,13 +22,13 @@ export type InboundEmail = {
   body: string;
 };
 
-class PurchaseEmailError extends Error {
+export class PurchaseEmailError extends Error {
   constructor() {
     super("could not parse purchase email");
   }
 }
 
-class CouldNotRouteEmail extends Error {
+export class CouldNotRouteEmail extends Error {
   constructor() {
     super("could not determine where to route email");
   }
@@ -38,8 +41,7 @@ class UnrecognizedBank extends Error {
 }
 
 /* Parses a purchase alert and saves the transaction info to the database */
-const handlePurchaseAlert = (email: InboundEmail) => {
-  const to = email.to;
+const handlePurchaseAlert = (user: User, email: InboundEmail) => {
   const from = email.from;
 
   const lines = email["body"].split("\n");
@@ -75,10 +77,28 @@ const handlePurchaseAlert = (email: InboundEmail) => {
 
   const amount = dollarStringToCents(amountStr);
 
-  savePurchase({ email: to, amount, merchant, timestamp: email.timestamp });
+  savePurchase({ user, amount, merchant, timestamp: email.timestamp });
 };
 
-const routeEmail = (email: InboundEmail) => {
+const sendWelcomeEmail = (user: User) => {
+  const domain = config.get("email_domain");
+  const qs = `email=${user.userEmail}&mac=${generateMac(user.userEmail)}`;
+  const dashboard = `https://${domain}/dashboard?${qs}`;
+  const welcome = `
+  ~~~
+  Here is the link to your dashboard:
+  ${dashboard}
+  ~~~`;
+
+  queueEmail({
+    sender: `info@${domain}`,
+    to: user.userEmail,
+    subject: "Welcome!",
+    body: welcome,
+  });
+};
+
+export const routeEmail = (email: InboundEmail) => {
   const msgid = email.messageId;
   const from = email.from;
   const to = email.to;
@@ -90,11 +110,23 @@ const routeEmail = (email: InboundEmail) => {
     return subject.includes("transaction") || subject.includes("card");
   };
 
-  if (isPurchaseAlert(email)) {
-    handlePurchaseAlert(email);
+  const sentToInfo = (email: InboundEmail) => {
+    const domain = config.get("email_domain");
+    return email.to === `info@${domain}`;
+  };
+
+  if (sentToInfo(email)) {
+    const [user, _] = getOrCreateUser({ email: email.from });
+    sendWelcomeEmail(user);
+  } else if (isPurchaseAlert(email)) {
+    // Purchase alerts are forwarded to us from the user.
+    // So in the email, `From` is their bank and `To` is the user
+    const [user, isNew] = getOrCreateUser({ email: email.to });
+    if (isNew) {
+      sendWelcomeEmail(user);
+    }
+    handlePurchaseAlert(user, email);
   } else {
     throw new CouldNotRouteEmail();
   }
 };
-
-export { routeEmail };
