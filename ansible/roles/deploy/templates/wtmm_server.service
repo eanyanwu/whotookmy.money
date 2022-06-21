@@ -8,6 +8,7 @@ ExecStart=%h/{{ application_folder }}/wtmm_server
 Environment="PORT={{ wtmm_server_port }}"
 Environment="EMAIL_DOMAIN={{ email_domain }}"
 Environment="WTMM_MAC_KEY={{ wtmm_mac_key }}"
+Environment="POSTMARK_API_TOKEN={{ postmark_api_token }}"
 Restart=always
 RestartSec=14s
 StandardInput=null
