@@ -6,6 +6,11 @@
     "build": "tsc",
     "check": "tsc --noEmit"
   },
+  "pkg": {
+    "assets": [
+      "src/templates/*"
+    ]
+  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.5.0",
     "@types/convict": "^6.1.1",
