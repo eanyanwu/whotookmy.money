@@ -17,7 +17,8 @@
         padding: 0;
       }
       body {
-        font-family: Helvetica, Arial, sans-serif; color: #222;
+        font-family: Helvetica, Arial, sans-serif;
+        color: #222;
         box-sizing: border-box;
       }
       table {
@@ -36,7 +37,7 @@
         overflow: scroll;
       }
       /* For each row, display the date cell on the bottom, data on the top */
-      .bar  {
+      .bar {
         display: flex;
         flex-direction: column-reverse;
         /* Bars grow to fill up the container width */
@@ -51,14 +52,16 @@
       /* TEMP */
       td {
       }
-  </style>
+    </style>
   </head>
   <body>
     <h1>Summary</h1>
     <p>{{ email }}</p>
     <section>
       <table>
-        <caption>Daily spend in dollars</caption>
+        <caption>
+          Daily spend in dollars
+        </caption>
         <thead>
           <tr>
             <th scope="row">Date</th>
@@ -66,16 +69,14 @@
           </tr>
         </thead>
         <tbody>
-        {{#spend}}
+          {{#spend}}
           <tr class="bar">
-            <td>
-            {{ dayOfWeek }}
-            </td>
+            <td>{{ dayOfWeek }}</td>
             <td class="bar-data" style="height: {{ percentageOfMaxSpend }}%">
-            {{ spendInDollars }}
+              {{ spendInDollars }}
             </td>
           </tr>
-        {{/spend}}
+          {{/spend}}
         </tbody>
       </table>
     </section>

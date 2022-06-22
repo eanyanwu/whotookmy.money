@@ -1,12 +1,12 @@
+import getDay from "date-fns/getDay";
+import parseISO from "date-fns/parseISO";
 import fs from "fs/promises";
 import Mustache from "mustache";
-import { dailySpend, lookupUser, NoRowsReturned } from "../data";
 import { centsToDollarString } from "../currency";
-import type { HttpHandlerResponse } from "./http_handler";
-import parseISO from "date-fns/parseISO";
-import getDay from "date-fns/getDay";
+import { dailySpend, lookupUser, NoRowsReturned } from "../data";
 import { WEEKDAYS } from "../datetime";
 import * as log from "../log";
+import type { HttpHandlerResponse } from "./http_handler";
 
 type DashboardHandlerArgs = {
   userId: number;
@@ -30,16 +30,18 @@ export const dashboard = async ({
     throw err;
   }
   const spend = dailySpend(user);
-  const maxSpend = spend.map(s => s.spend).reduce((a, b) => Math.max(a,b), -Infinity);
+  const maxSpend = spend
+    .map((s) => s.spend)
+    .reduce((a, b) => Math.max(a, b), -Infinity);
 
-  const transformedSpend = spend.map(({ day, spend}) => {
+  const transformedSpend = spend.map(({ day, spend }) => {
     return {
       day,
-      dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0,3),
+      dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0, 3),
       spend,
       spendInDollars: centsToDollarString(spend),
       percentageOfMaxSpend: Math.floor((spend / maxSpend) * 100),
-    }
+    };
   });
 
   const view = {

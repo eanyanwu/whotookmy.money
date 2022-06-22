@@ -1,5 +1,9 @@
 import assert from "assert";
-import { dollarStringToCents, centsToDollarString, InvalidDollarString } from "./currency";
+import {
+  centsToDollarString,
+  dollarStringToCents,
+  InvalidDollarString,
+} from "./currency";
 
 describe("dollarStringToCents", () => {
   it("converts properly", () => {

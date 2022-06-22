@@ -5,7 +5,7 @@ export class InvalidDollarString extends Error {
 }
 
 export const centsToDollarString = (i: number): string => {
-  let dollarStr = i.toString().split("")
+  let dollarStr = i.toString().split("");
   let len = dollarStr.length;
 
   // Place a leading 0 in front of single cents
@@ -24,7 +24,7 @@ export const centsToDollarString = (i: number): string => {
   // place the dollar sign
   dollarStr.unshift("$");
 
-  return dollarStr.join("")
+  return dollarStr.join("");
 };
 
 /* Converts a dollar string (e.g. $100.00) into cents */
