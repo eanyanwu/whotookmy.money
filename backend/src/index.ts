@@ -10,7 +10,7 @@ open_and_init();
 // Start the server
 const server = createServer();
 const PORT = config.get("server").port;
-server.listen(PORT, "192.168.1.234", () => {
+server.listen(PORT, "127.0.0.1", () => {
   info(`server listening on port: ${PORT}`);
 });
 
