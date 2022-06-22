@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>wtmm dashboard</title>
+    <style>
+      /* SETUP */
+      :root {
+        --dark-blue: #005689;
+        --blue: #007cb9;
+        --light-blue: #d5eeff;
+        --orange: #ff895d;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: Helvetica, Arial, sans-serif;
+        color: #222;
+        box-sizing: border-box;
+      }
+      table {
+        display: block;
+      }
+      section {
+        padding: 1em 2em;
+      }
+      tbody {
+        /* Put all the rows on a horizontal line */
+        display: flex;
+        flex-direction: row;
+        /* Set the dimensions of the chart */
+        height: 10rem;
+        width: 100%;
+        overflow: scroll;
+      }
+      /* For each row, display the date cell on the bottom, data on the top */
+      .bar {
+        display: flex;
+        flex-direction: column-reverse;
+        /* Bars grow to fill up the container width */
+        flex: 1 1 auto;
+        /* Give space between bars */
+        margin-right: 3px;
+      }
+      .bar-data {
+        color: white;
+        background-color: var(--orange);
+      }
+      /* TEMP */
+      td {
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Summary</h1>
+    <p>{{ email }}</p>
+    <section>
+      <table>
+        <caption>
+          Daily spend in dollars
+        </caption>
+        <thead>
+          <tr>
+            <th scope="row">Date</th>
+            <th scope="row">Spend ($)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#spend}}
+          <tr class="bar">
+            <td>{{ dayOfWeek }}</td>
+            <td class="bar-data" style="height: {{ percentageOfMaxSpend }}%">
+              {{ spendInDollars }}
+            </td>
+          </tr>
+          {{/spend}}
+        </tbody>
+      </table>
+    </section>
+  </body>
+</html>

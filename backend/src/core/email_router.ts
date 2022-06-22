@@ -19,7 +19,7 @@ export type InboundEmail = {
   tzOffset: number;
   subject: string;
   messageId: string;
-  body: string;
+  body?: string;
 };
 
 export class PurchaseEmailError extends Error {
@@ -44,7 +44,11 @@ class UnrecognizedBank extends Error {
 const handlePurchaseAlert = (user: User, email: InboundEmail) => {
   const from = email.from;
 
-  const lines = email["body"].split("\n");
+  if (!email.body) {
+    throw new PurchaseEmailError();
+  }
+
+  const lines = email.body.split("\n");
 
   let merchant: string;
   let amountStr: string;
@@ -81,8 +85,10 @@ const handlePurchaseAlert = (user: User, email: InboundEmail) => {
 };
 
 const sendWelcomeEmail = (user: User) => {
-  const domain = config.get("email_domain");
-  const qs = `email=${user.userEmail}&mac=${generateMac(user.userEmail)}`;
+  const domain = config.get("emailDomain");
+  const qs = `id=${user.userId}&mac=${encodeURIComponent(
+    generateMac(user.userId.toString())
+  )}`;
   const dashboard = `https://${domain}/dashboard?${qs}`;
   const welcome = `
   ~~~
@@ -111,7 +117,7 @@ export const routeEmail = (email: InboundEmail) => {
   };
 
   const sentToInfo = (email: InboundEmail) => {
-    const domain = config.get("email_domain");
+    const domain = config.get("emailDomain");
     return email.to === `info@${domain}`;
   };
 

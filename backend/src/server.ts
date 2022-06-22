@@ -6,7 +6,7 @@ import http from "http";
 import type { Socket } from "net";
 import { verifyMac } from "./crypto";
 import type { HttpHandlerResponse } from "./http_handlers";
-import { postmark } from "./http_handlers";
+import { dashboard, postmark } from "./http_handlers";
 import { elapsed, info, timer } from "./log";
 
 const router = setup_router({
@@ -49,15 +49,20 @@ export const createServer = () => {
     let qsIdx = url.indexOf("?");
 
     if (qsIdx === -1) {
-      return false;
+      return { statusCode: 404 };
     }
 
     let qs = new URLSearchParams(url.slice(qsIdx));
-    let email = qs.get("email");
+    let userIdStr = qs.get("id");
     let mac = qs.get("mac");
 
-    if (!email || !mac) {
-      return false;
+    if (!userIdStr || !mac) {
+      return { statusCode: 404 };
+    }
+
+    let userId = Number.parseInt(userIdStr);
+    if (Number.isNaN(userId)) {
+      return { statusCode: 404 };
     }
 
     /* Rationale: Message Authentication Codes are used to verify that (a) a
@@ -67,11 +72,11 @@ export const createServer = () => {
      * through dashboards by userID, or by trying different user emails. Creating a
      * MAC for the email and including it in the dashboard link proves that it was I
      * who generated the link*/
-    if (!verifyMac(email, mac)) {
+    if (!verifyMac(userIdStr, mac)) {
       return { statusCode: 404 };
     }
 
-    return { statusCode: 200 };
+    return dashboard({ userId });
   });
 
   let server = http.createServer(async (req, res) => {

@@ -1,5 +1,9 @@
 import assert from "assert";
-import { dollarStringToCents, InvalidDollarString } from "./currency";
+import {
+  centsToDollarString,
+  dollarStringToCents,
+  InvalidDollarString,
+} from "./currency";
 
 describe("dollarStringToCents", () => {
   it("converts properly", () => {
@@ -14,5 +18,14 @@ describe("dollarStringToCents", () => {
     assert.throws(() => dollarStringToCents("1.0"), InvalidDollarString);
     // must have a period
     assert.throws(() => dollarStringToCents("$10"), InvalidDollarString);
+  });
+});
+
+describe("centsToDollarString", () => {
+  it("converts properly", () => {
+    assert.equal(centsToDollarString(0), "$0.00");
+    assert.equal(centsToDollarString(10), "$0.10");
+    assert.equal(centsToDollarString(100), "$1.00");
+    assert.equal(centsToDollarString(10000), "$100.00");
   });
 });

@@ -30,3 +30,13 @@ export const parseRfc2822 = (i: string): [Date, number] => {
 export const toUnixTimestamp = (d: Date): number => {
   return Math.floor(d.getTime() / 1000);
 };
+
+export const WEEKDAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];

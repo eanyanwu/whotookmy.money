@@ -4,6 +4,29 @@ export class InvalidDollarString extends Error {
   }
 }
 
+export const centsToDollarString = (i: number): string => {
+  let dollarStr = i.toString().split("");
+  let len = dollarStr.length;
+
+  // Place a leading 0 in front of single cents
+  if (len === 1) {
+    len = dollarStr.unshift("0");
+  }
+
+  // Place the period
+  dollarStr.splice(len - 2, 0, ".");
+
+  // If the string was exactly 2 digits, place a leading 0
+  if (len == 2) {
+    dollarStr.unshift("0");
+  }
+
+  // place the dollar sign
+  dollarStr.unshift("$");
+
+  return dollarStr.join("");
+};
+
 /* Converts a dollar string (e.g. $100.00) into cents */
 export const dollarStringToCents = (i: string): number => {
   let str: string = i;

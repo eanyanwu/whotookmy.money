@@ -2,7 +2,7 @@ import type { InboundEmail } from "../core";
 import { routeEmail } from "../core";
 import { parseRfc2822, toUnixTimestamp } from "../datetime";
 import { error } from "../log";
-import type { HttpHandlerRequest, HttpHandlerResponse } from "./http_handler";
+import type { HttpHandlerResponse } from "./http_handler";
 
 class CouldNotParseEmail extends Error {
   constructor() {
@@ -117,7 +117,7 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
   const hasHtmlBody = e["HtmlBody"].trim() !== "";
   const hasTextBody = e["TextBody"].trim() !== "";
 
-  let emailBody: string | null = null;
+  let emailBody: string | undefined = undefined;
 
   if (hasHtmlBody) {
     const htmlBody = extractHtmlBody(e["HtmlBody"]);
@@ -131,14 +131,14 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
   }
 
   if (!emailBody) {
-    throw new CouldNotParseEmail();
+    emailBody = undefined;
+  } else {
+    emailBody = emailBody
+      .split("\n")
+      .map((s) => s.trim())
+      .filter((s) => s != "")
+      .join("\n");
   }
-
-  emailBody = emailBody
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s != "")
-    .join("\n");
 
   return {
     to: to.toLowerCase(),
@@ -151,10 +151,13 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
   };
 };
 
+type PostmarkHandlerArgs = {
+  payload: Buffer;
+};
 /* Handler for postmark webhook requests */
 export const postmark = async ({
   payload,
-}: HttpHandlerRequest): Promise<HttpHandlerResponse> => {
+}: PostmarkHandlerArgs): Promise<HttpHandlerResponse> => {
   let json;
   try {
     json = JSON.parse(payload.toString());

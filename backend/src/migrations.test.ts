@@ -15,12 +15,12 @@ describe("Database migrations", function () {
 
   beforeEach(function () {
     FILE = randomUUID();
-    config.set("server.db_file", FILE);
+    config.set("server.dbFile", FILE);
   });
 
   afterEach(async function () {
     await fs.rm(FILE);
-    config.set("server.db_file", config.get("server.db_file"));
+    config.set("server.dbFile", config.get("server.dbFile"));
   });
 
   it("can migrate up", function () {

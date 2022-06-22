@@ -1,5 +1,6 @@
-import type { HttpHandlerRequest, HttpHandlerResponse } from "./http_handler";
+import { dashboard } from "./dashboard";
+import type { HttpHandlerResponse } from "./http_handler";
 import { postmark } from "./postmark";
 
-export { postmark };
-export type { HttpHandlerRequest, HttpHandlerResponse };
+export { postmark, dashboard };
+export type { HttpHandlerResponse };
