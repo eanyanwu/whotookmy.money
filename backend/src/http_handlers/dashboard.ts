@@ -2,6 +2,7 @@ import getDay from "date-fns/getDay";
 import parseISO from "date-fns/parseISO";
 import fs from "fs/promises";
 import Mustache from "mustache";
+import path from "path";
 import { centsToDollarString } from "../currency";
 import { dailySpend, lookupUser, NoRowsReturned } from "../data";
 import { WEEKDAYS } from "../datetime";
@@ -15,9 +16,12 @@ type DashboardHandlerArgs = {
 export const dashboard = async ({
   userId,
 }: DashboardHandlerArgs): Promise<HttpHandlerResponse> => {
-  const template = await fs.readFile("./templates/dashboard.html", {
-    encoding: "utf-8",
-  });
+  const template = await fs.readFile(
+    path.join(__dirname, "../../src/templates/dashboard.html"),
+    {
+      encoding: "utf-8",
+    }
+  );
   let user;
 
   try {
