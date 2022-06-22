@@ -49,7 +49,7 @@ export const createServer = () => {
     let qsIdx = url.indexOf("?");
 
     if (qsIdx === -1) {
-      return false;
+      return { statusCode: 404 };
     }
 
     let qs = new URLSearchParams(url.slice(qsIdx));
@@ -57,7 +57,7 @@ export const createServer = () => {
     let mac = qs.get("mac");
 
     if (!userIdStr || !mac) {
-      return false;
+      return { statusCode: 404 };
     }
 
     let userId = Number.parseInt(userIdStr);

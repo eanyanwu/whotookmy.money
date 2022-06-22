@@ -235,7 +235,7 @@ describe("dailySpend", () => {
     const spend = dailySpend(user);
     assert.deepStrictEqual(spend, []);
   });
-  it.only("with purchases", () => {
+  it("with purchases", () => {
     const c = open();
     const [user] = getOrCreateUser({ email: "person@example.org" });
     c.exec(

@@ -15,7 +15,6 @@ export const verifyMac = (message: string, mac: string): boolean => {
   const hmac = crypto.createHmac("sha256", macKey, { encoding: "base64" });
   hmac.update(message);
   const digest = hmac.digest("base64");
-  console.log({ digest });
 
   if (mac !== digest) {
     return false;

@@ -86,7 +86,9 @@ const handlePurchaseAlert = (user: User, email: InboundEmail) => {
 
 const sendWelcomeEmail = (user: User) => {
   const domain = config.get("emailDomain");
-  const qs = `id=${user.userId}&mac=${generateMac(user.userId.toString())}`;
+  const qs = `id=${user.userId}&mac=${encodeURIComponent(
+    generateMac(user.userId.toString())
+  )}`;
   const dashboard = `https://${domain}/dashboard?${qs}`;
   const welcome = `
   ~~~
