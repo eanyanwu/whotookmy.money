@@ -2,7 +2,7 @@ import type { InboundEmail } from "../core";
 import { routeEmail } from "../core";
 import { parseRfc2822, toUnixTimestamp } from "../datetime";
 import { error } from "../log";
-import type { HttpHandlerRequest, HttpHandlerResponse } from "./http_handler";
+import type { HttpHandlerResponse } from "./http_handler";
 
 class CouldNotParseEmail extends Error {
   constructor() {
@@ -140,7 +140,6 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
       .join("\n");
   }
 
-
   return {
     to: to.toLowerCase(),
     from: from.toLowerCase(),
@@ -152,10 +151,13 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
   };
 };
 
+type PostmarkHandlerArgs = {
+  payload: Buffer;
+};
 /* Handler for postmark webhook requests */
 export const postmark = async ({
   payload,
-}: HttpHandlerRequest): Promise<HttpHandlerResponse> => {
+}: PostmarkHandlerArgs): Promise<HttpHandlerResponse> => {
   let json;
   try {
     json = JSON.parse(payload.toString());

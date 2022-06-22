@@ -45,7 +45,7 @@ const handlePurchaseAlert = (user: User, email: InboundEmail) => {
   const from = email.from;
 
   if (!email.body) {
-    throw new PurchaseEmailError(); 
+    throw new PurchaseEmailError();
   }
 
   const lines = email.body.split("\n");
@@ -86,7 +86,7 @@ const handlePurchaseAlert = (user: User, email: InboundEmail) => {
 
 const sendWelcomeEmail = (user: User) => {
   const domain = config.get("emailDomain");
-  const qs = `email=${user.userEmail}&mac=${generateMac(user.userEmail)}`;
+  const qs = `id=${user.userId}&mac=${generateMac(user.userId.toString())}`;
   const dashboard = `https://${domain}/dashboard?${qs}`;
   const welcome = `
   ~~~

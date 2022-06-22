@@ -31,9 +31,7 @@ describe("routeEmail", () => {
 
     assert.equal(res.subject, "Welcome!");
     assert.ok(
-      res.body.includes(
-        "https://dev.whotookmy.money/dashboard?email=person@example.org&mac="
-      )
+      res.body.includes("https://dev.whotookmy.money/dashboard?id=1&mac=")
     );
   });
 
@@ -49,9 +47,11 @@ describe("routeEmail", () => {
       body: "Merchant\nSTOP & SHOP\nAmount\n$28.40",
     });
 
-    const purchase = c.prepare(
-      `SELECT amount_in_cents as amount, merchant, timestamp FROM purchase`
-    ).get();
+    const purchase = c
+      .prepare(
+        `SELECT amount_in_cents as amount, merchant, timestamp FROM purchase`
+      )
+      .get();
 
     assert.equal(purchase.amount, 2840);
     assert.equal(purchase.merchant, "STOP & SHOP");
@@ -70,9 +70,11 @@ describe("routeEmail", () => {
       body: "Description\nSQ * THE BOOKSTORE\nAmount\n$13.28",
     });
 
-    const purchase = c.prepare(
-      `SELECT amount_in_cents as amount, merchant, timestamp FROM purchase`
-    ).get();
+    const purchase = c
+      .prepare(
+        `SELECT amount_in_cents as amount, merchant, timestamp FROM purchase`
+      )
+      .get();
 
     assert.equal(purchase.amount, 1328);
     assert.equal(purchase.merchant, "SQ * THE BOOKSTORE");
@@ -91,9 +93,11 @@ describe("routeEmail", () => {
       body: "Amount\nVENMO\n$25.00",
     });
 
-    const purchase = c.prepare(
-      `SELECT amount_in_cents as amount, merchant, timestamp FROM purchase`
-    ).get();
+    const purchase = c
+      .prepare(
+        `SELECT amount_in_cents as amount, merchant, timestamp FROM purchase`
+      )
+      .get();
 
     assert.equal(purchase.amount, 2500);
     assert.equal(purchase.merchant, "VENMO");

@@ -226,3 +226,47 @@ export const markEmailSent = (e: OutboundEmail) => {
     WHERE outbound_email_id = ?`
   ).run(e.outboundEmailId);
 };
+
+export type DailySpend = { day: string; spend: number };
+export const dailySpend = (user: User): DailySpend[] => {
+  const c = open();
+
+  // Calculates the spend per day for the given user, The `calendar` table is a
+  // recursive CTE allowing me to geneerate a timeseries starting at the user's
+  // first purchase and ending today
+  const spend = c
+    .prepare(
+      `WITH first_purchase as (
+      SELECT MIN(timestamp) as timestamp
+      FROM purchase
+      GROUP BY user_id
+      HAVING user_id = :user_id
+    ),
+    daily_spend as (
+      SELECT
+        user_id,
+        date(timestamp, 'unixepoch') as day,
+        SUM(amount_in_cents) as spend
+      FROM purchase
+      GROUP BY user_id, day
+      HAVING user_id = :user_id
+    ),
+    calendar as (
+      SELECT date(timestamp, 'unixepoch') as day
+      FROM first_purchase
+      UNION ALL
+      SELECT date(day, '+1 day')
+      FROM calendar
+      WHERE day < date()
+    )
+    SELECT
+      calendar.day as day,
+      COALESCE(daily_spend.spend, 0) as spend
+    FROM calendar
+    LEFT JOIN daily_spend
+    ON calendar.day = daily_spend.day`
+    )
+    .all({ user_id: user.userId });
+
+  return spend as DailySpend[];
+};

@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import config from "../config";
 import { open, open_and_init } from "../db";
 import {
+  dailySpend,
   EmailRateLimit,
   getOrCreateUser,
   lookupUser,
@@ -225,5 +226,35 @@ describe("markEmailSent & pollUnsentEmail", () => {
     markEmailSent(third);
 
     assert.equal(pollUnsentEmail(), undefined);
+  });
+});
+
+describe("dailySpend", () => {
+  it("with no purchases", () => {
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    const spend = dailySpend(user);
+    assert.deepStrictEqual(spend, []);
+  });
+  it.only("with purchases", () => {
+    const c = open();
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    c.exec(
+      `INSERT INTO purchase (user_id, amount_in_cents, merchant, timestamp)
+      VALUES
+      (1, 1200, 'STORE', strftime('%s', 'now', '-4 days')),
+      (1, 1200, 'STORE', strftime('%s', 'now', '-4 days')),
+
+      (1, 2400, 'MOVIE', strftime('%s', 'now', '-3 days')),
+
+      (1, 3600, 'BOOKS', strftime('%s', 'now', '-2 day'));`
+    );
+
+    const spend = dailySpend(user);
+    assert.equal(spend.length, 5);
+    assert.equal(spend[0].spend, 2400);
+    assert.equal(spend[1].spend, 2400);
+    assert.equal(spend[2].spend, 3600);
+    assert.equal(spend[3].spend, 0);
+    assert.equal(spend[4].spend, 0);
   });
 });

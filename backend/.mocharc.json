@@ -1,6 +1,5 @@
 {
   "extension": [".ts"],
   "spec": "src/**/*.test.ts",
-  "require": "ts-node/register",
-  "color": false
+  "require": "ts-node/register"
 }
