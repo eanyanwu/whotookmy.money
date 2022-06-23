@@ -4,10 +4,63 @@ import setup_router from "find-my-way";
 import type { IncomingMessage } from "http";
 import http from "http";
 import type { Socket } from "net";
+import net from "net";
 import { verifyMac } from "./crypto";
 import type { HttpHandlerResponse } from "./http_handlers";
 import { dashboard, postmark } from "./http_handlers";
 import { elapsed, info, timer } from "./log";
+
+type CreateServerOptions = {
+  host: string;
+  port: number;
+  onListen: (err?: Error, server?: http.Server) => void;
+  onRequest: (req: http.IncomingMessage, res: http.ServerResponse) => void;
+};
+
+// Creates generic server that calls `onListen` once it starts listening. requests
+// to the server are sent to the `onRequest` callback
+export const createServer = (opts: CreateServerOptions) => {
+  const server = http.createServer();
+  server.on("request", opts.onRequest);
+  server.on("listening", () => {
+    // save coercion as listening on an IP port always returns AddressInfo
+    const { port, address } = server.address() as net.AddressInfo;
+    info(`server listening on: ${address}:${port}`);
+    opts.onListen(undefined, server);
+  });
+  server.on("error", (err) => {
+    opts.onListen(err, undefined);
+  });
+  server.on("connection", (socket: Socket) => {
+    socket.setKeepAlive(true);
+  });
+  server.listen(opts.port, opts.host);
+};
+
+type CreateServerAsyncOptions = Omit<CreateServerOptions, "onListen">;
+// Promisified version of `setupServer`. Promise resolves with the server
+// instance once the server is up and listening
+export const createServerAsync = (
+  opts: CreateServerAsyncOptions
+): Promise<http.Server> => {
+  return new Promise((resolve, reject) => {
+    createServer({
+      host: opts.host,
+      port: opts.port,
+      onRequest: opts.onRequest,
+      onListen: (err, server) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        if (server) {
+          resolve(server);
+          return;
+        }
+      },
+    });
+  });
+};
 
 const router = setup_router({
   ignoreTrailingSlash: true,
@@ -38,7 +91,11 @@ export const readRequestPayload = (
   });
 };
 
-export const createServer = () => {
+type CreateWtmmServerOptions = Omit<CreateServerAsyncOptions, "onRequest">;
+/* Sets up the wtmm server to listen for postmark webhooks and dashboard requests */
+export const createWtmmServer = (
+  opts: CreateWtmmServerOptions
+): Promise<http.Server> => {
   router.on("POST", "/postmark_webhook", async (req, res, params) => {
     let payload = await readRequestPayload(req);
     return postmark({ payload });
@@ -79,7 +136,10 @@ export const createServer = () => {
     return dashboard({ userId });
   });
 
-  let server = http.createServer(async (req, res) => {
+  const onRequest = async (
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ) => {
     timer("request-duration");
     const response: HttpHandlerResponse = await router.lookup(req, res);
 
@@ -94,11 +154,7 @@ export const createServer = () => {
     res.end(response.data);
 
     elapsed("request-duration");
-  });
+  };
 
-  server.on("connection", (socket: Socket) => {
-    socket.setKeepAlive(true);
-  });
-
-  return server;
+  return createServerAsync({ ...opts, onRequest });
 };

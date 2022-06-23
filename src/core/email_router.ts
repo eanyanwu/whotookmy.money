@@ -3,7 +3,8 @@ import { generateMac } from "../crypto";
 import { dollarStringToCents } from "../currency";
 import type { User } from "../data";
 import { getOrCreateUser, queueEmail, savePurchase } from "../data";
-import { info } from "../log";
+import { sendHttpRequestAsync } from "../http_request";
+import * as log from "../log";
 
 /* Known emails */
 export const SCHWAB_ALERT_EMAIL: string = "donotreply-comm@schwab.com";
@@ -22,9 +23,9 @@ export type InboundEmail = {
   body?: string;
 };
 
-export class PurchaseEmailError extends Error {
+export class InboundEmailError extends Error {
   constructor() {
-    super("could not parse purchase email");
+    super("could not parse inbound email");
   }
 }
 
@@ -40,12 +41,58 @@ class UnrecognizedBank extends Error {
   }
 }
 
+const handleGmailForwardingConfirmation = async (email: InboundEmail) => {
+  if (!email.body) {
+    throw new InboundEmailError();
+  }
+
+  const lines = email.body.split("\n");
+
+  const confirmationCodeLine =
+    lines.find((s) => s.startsWith("Confirmation code:")) || "";
+  const confirmationCode = confirmationCodeLine.split(" ").pop();
+
+  const confirmationURL = lines.find((s) => s.startsWith("http"));
+
+  // The user's email is the very first thing on the first line. If we have
+  // reached this point, it's safe to assume that there is at least one line
+  const userEmail = lines[0].split(" ")[0];
+
+  if (!confirmationCode || !confirmationURL || !userEmail) {
+    throw new InboundEmailError();
+  }
+
+  // Making a post request to the URL with "Host: mail.google.com" confirms it
+  log.info({ email: userEmail }, "confirming gmail forwarding request");
+  await sendHttpRequestAsync({
+    url: confirmationURL,
+    method: "POST",
+    headers: {
+      Host: "mail.google.com",
+    },
+  });
+
+  const domain = config.get("emailDomain");
+
+  // Send the confirmation code to the user as well
+  queueEmail({
+    sender: `alerts@${domain}`,
+    to: userEmail,
+    subject: "Gmail forwarding confirmation code",
+    body: confirmationCode,
+  });
+
+  // User is very likely going to be using the service.
+  // Create them
+  getOrCreateUser({ email: userEmail });
+};
+
 /* Parses a purchase alert and saves the transaction info to the database */
 const handlePurchaseAlert = (user: User, email: InboundEmail) => {
   const from = email.from;
 
   if (!email.body) {
-    throw new PurchaseEmailError();
+    throw new InboundEmailError();
   }
 
   const lines = email.body.split("\n");
@@ -55,26 +102,26 @@ const handlePurchaseAlert = (user: User, email: InboundEmail) => {
 
   if (from === CHASE_ALERT_EMAIL) {
     // chase credit card uses "Merchant"
-    let merchant_idx = lines.findIndex((x) => x === "Merchant");
-    if (merchant_idx === -1) {
+    let merchantIdx = lines.findIndex((x) => x === "Merchant");
+    if (merchantIdx === -1) {
       // chase debit uses "Description"
-      merchant_idx = lines.findIndex((x) => x === "Description");
+      merchantIdx = lines.findIndex((x) => x === "Description");
     }
-    let amount_idx = lines.findIndex((x) => x === "Amount");
-    if (merchant_idx === -1 || amount_idx == -1) {
-      throw new PurchaseEmailError();
+    let amountIdx = lines.findIndex((x) => x === "Amount");
+    if (merchantIdx === -1 || amountIdx == -1) {
+      throw new InboundEmailError();
     }
 
-    merchant = lines[merchant_idx + 1];
-    amountStr = lines[amount_idx + 1];
+    merchant = lines[merchantIdx + 1];
+    amountStr = lines[amountIdx + 1];
   } else if (from === SCHWAB_ALERT_EMAIL) {
-    let merchant_idx = lines.findIndex((x) => x === "Amount");
-    if (merchant_idx === -1) {
-      throw new PurchaseEmailError();
+    let merchantIdx = lines.findIndex((x) => x === "Amount");
+    if (merchantIdx === -1) {
+      throw new InboundEmailError();
     }
 
-    merchant = lines[merchant_idx + 1];
-    amountStr = lines[merchant_idx + 2];
+    merchant = lines[merchantIdx + 1];
+    amountStr = lines[merchantIdx + 2];
   } else {
     throw new UnrecognizedBank(from);
   }
@@ -104,12 +151,12 @@ const sendWelcomeEmail = (user: User) => {
   });
 };
 
-export const routeEmail = (email: InboundEmail) => {
+export const routeEmail = async (email: InboundEmail) => {
   const msgid = email.messageId;
   const from = email.from;
   const to = email.to;
 
-  info({ msgid, from, to }, "new inbound email");
+  log.info({ msgid, from, to }, "new inbound email");
 
   const isPurchaseAlert = (email: InboundEmail) => {
     const subject = email.subject.toLowerCase();
@@ -121,8 +168,14 @@ export const routeEmail = (email: InboundEmail) => {
     return email.to === `info@${domain}`;
   };
 
-  if (sentToInfo(email)) {
-    const [user, _] = getOrCreateUser({ email: email.from });
+  const gmailForwardingConfirmation = (email: InboundEmail) => {
+    return email.from === "forwarding-noreply@google.com";
+  };
+
+  if (gmailForwardingConfirmation(email)) {
+    await handleGmailForwardingConfirmation(email);
+  } else if (sentToInfo(email)) {
+    const [user] = getOrCreateUser({ email: email.from });
     sendWelcomeEmail(user);
   } else if (isPurchaseAlert(email)) {
     // Purchase alerts are forwarded to us from the user.

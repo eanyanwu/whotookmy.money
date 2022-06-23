@@ -1,11 +1,28 @@
 import assert from "assert";
-import { open } from "../../db";
-import { CouldNotRouteEmail, routeEmail } from "../email_router";
+import { randomUUID } from "crypto";
+import fs from "fs/promises";
+import config from "../config";
+import { open, open_and_init } from "../db";
+import { createServerAsync } from "../server";
+import { CouldNotRouteEmail, routeEmail } from "./email_router";
 
 describe("routeEmail", () => {
+  let FILE: string;
+
+  beforeEach(function () {
+    FILE = `${randomUUID()}.db`;
+    config.set("server.dbFile", FILE);
+    open_and_init();
+  });
+
+  afterEach(async function () {
+    await fs.rm(FILE);
+    config.set("server.dbFile", config.get("server.dbFile"));
+  });
+
   it("throws when we can't route", () => {
-    assert.throws(() => {
-      routeEmail({
+    assert.rejects(async () => {
+      await routeEmail({
         to: "person@example.org",
         from: "person2@example.org",
         timestamp: 0,
@@ -16,9 +33,9 @@ describe("routeEmail", () => {
     }, CouldNotRouteEmail);
   });
 
-  it("info@ sends dashboard link", () => {
+  it("info@ sends dashboard link", async () => {
     const c = open();
-    routeEmail({
+    await routeEmail({
       to: "info@dev.whotookmy.money",
       from: "person@example.org",
       timestamp: 0,
@@ -29,16 +46,15 @@ describe("routeEmail", () => {
 
     const res = c.prepare(`SELECT subject, body FROM outbound_email`).get();
 
-    console.log({ res });
     assert.equal(res.subject, "Welcome!");
     assert.ok(
       res.body.includes("https://dev.whotookmy.money/dashboard?id=1&mac=")
     );
   });
 
-  it("ingests a chase credit card alert", () => {
+  it("ingests a chase credit card alert", async () => {
     const c = open();
-    routeEmail({
+    await routeEmail({
       to: "person@example.org",
       from: "no.reply.alerts@chase.com",
       timestamp: 0,
@@ -59,9 +75,9 @@ describe("routeEmail", () => {
     assert.equal(purchase.timestamp, 0);
   });
 
-  it("ingests a chase debit card alert", () => {
+  it("ingests a chase debit card alert", async () => {
     const c = open();
-    routeEmail({
+    await routeEmail({
       to: "person@example.org",
       from: "no.reply.alerts@chase.com",
       timestamp: 0,
@@ -82,9 +98,9 @@ describe("routeEmail", () => {
     assert.equal(purchase.timestamp, 0);
   });
 
-  it("ingests schwab debit card alert", () => {
+  it("ingests schwab debit card alert", async () => {
     const c = open();
-    routeEmail({
+    await routeEmail({
       to: "person@example.org",
       from: "donotreply-comm@schwab.com",
       timestamp: 0,
@@ -103,5 +119,38 @@ describe("routeEmail", () => {
     assert.equal(purchase.amount, 2500);
     assert.equal(purchase.merchant, "VENMO");
     assert.equal(purchase.timestamp, 0);
+  });
+
+  it("confirms gmail forwarding notices", async () => {
+    const c = open();
+    const server = await createServerAsync({
+      host: "localhost",
+      port: 8080,
+      onRequest: (req, res) => {
+        assert.equal(req.method, "POST");
+        res.end();
+      },
+    });
+
+    await routeEmail({
+      to: "whoever",
+      from: "forwarding-noreply@google.com",
+      timestamp: 0,
+      tzOffset: 0,
+      subject: "",
+      messageId: "",
+      body: "person@example.org\nhttp://localhost:8080\nConfirmation code: 1234",
+    });
+
+    server.close();
+
+    // an email is sent
+    const email = c.prepare(`SELECT body FROM outbound_email`).get().body;
+
+    // a user is created
+    const user = c.prepare(`SELECT user_email FROM user`).get().user_email;
+
+    assert.equal(email, "1234");
+    assert.equal(user, "person@example.org");
   });
 });

@@ -163,24 +163,24 @@ export const postmark = async ({
     json = JSON.parse(payload.toString());
   } catch (_) {
     // Assumption: Postmark will always send us valid JSON
-    return { statusCode: 400 };
+    return Promise.resolve({ statusCode: 400 });
   }
 
   if (isInboundPostmarkEmail(json)) {
     try {
-      routeEmail(toInboundEmail(json));
+      await routeEmail(toInboundEmail(json));
     } catch (e) {
       // We always want to return OK so postmark doesn't resend the email to us
       // If an error happens when handling the email, just log and move on
       error(e);
     }
-    return {
+    return Promise.resolve({
       statusCode: 200,
       headers: { "Content-Type": "text/plain" },
       data: "OK",
-    };
+    });
   } else {
     // Assumption: Postmark will always send us JSON that conforms to the email schema
-    return { statusCode: 400 };
+    return Promise.resolve({ statusCode: 400 });
   }
 };
