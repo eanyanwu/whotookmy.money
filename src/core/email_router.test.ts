@@ -1,16 +1,16 @@
 import assert from "assert";
-import { open, open_and_init } from "../db";
-import fs from "fs/promises";
-import { CouldNotRouteEmail, routeEmail } from "./email_router";
-import { createServerAsync } from "../server";
-import config from "../config";
 import { randomUUID } from "crypto";
+import fs from "fs/promises";
+import config from "../config";
+import { open, open_and_init } from "../db";
+import { createServerAsync } from "../server";
+import { CouldNotRouteEmail, routeEmail } from "./email_router";
 
 describe("routeEmail", () => {
   let FILE: string;
 
   beforeEach(function () {
-    FILE = `${randomUUID()}.db`
+    FILE = `${randomUUID()}.db`;
     config.set("server.dbFile", FILE);
     open_and_init();
   });
@@ -145,14 +145,10 @@ describe("routeEmail", () => {
     server.close();
 
     // an email is sent
-    const email = c.prepare(
-      `SELECT body FROM outbound_email`
-    ).get().body;
+    const email = c.prepare(`SELECT body FROM outbound_email`).get().body;
 
     // a user is created
-    const user = c.prepare(
-      `SELECT user_email FROM user`
-    ).get().user_email;
+    const user = c.prepare(`SELECT user_email FROM user`).get().user_email;
 
     assert.equal(email, "1234");
     assert.equal(user, "person@example.org");
