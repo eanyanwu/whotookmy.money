@@ -1,6 +1,7 @@
 import { Buffer, type Buffer as BufferType } from "buffer";
 import http, { type IncomingMessage } from "http";
 import https from "https";
+import * as log from "./log";
 
 type RequestArgs = {
   url: string;
@@ -79,6 +80,7 @@ export const sendHttpRequest = (
 export const sendHttpRequestAsync = (
   args: RequestArgs
 ): Promise<HttpResponse> => {
+  log.debug({ httpRequest: args });
   return new Promise((resolve, reject) => {
     sendHttpRequest(args, (err, resp) => {
       if (err) {
@@ -87,6 +89,7 @@ export const sendHttpRequestAsync = (
       }
 
       if (resp) {
+        log.debug({ httpResponse: resp });
         resolve(resp);
         return;
       }
