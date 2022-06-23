@@ -6,7 +6,7 @@
   vars:
     env: "dev"
     env_api_token_map:
-      dev: POSTMARK_API_TEST
+      dev: "{{ lookup('env', 'POSTMARK_API_TOKEN_DEV') }}" 
       prod: "{{ lookup('env', 'POSTMARK_API_TOKEN') }}"
     env_application_name_map:
       dev: dev_wtmm

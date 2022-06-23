@@ -17,7 +17,7 @@ export const dashboard = async ({
   userId,
 }: DashboardHandlerArgs): Promise<HttpHandlerResponse> => {
   const template = await fs.readFile(
-    path.join(__dirname, "../../src/templates/dashboard.html"),
+    path.join(__dirname, "../templates/dashboard.html"),
     {
       encoding: "utf-8",
     }
