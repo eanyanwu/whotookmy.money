@@ -1,6 +1,6 @@
 import assert from "assert";
-import { open } from "../../db";
-import { CouldNotRouteEmail, routeEmail } from "../email_router";
+import { open } from "../db";
+import { CouldNotRouteEmail, routeEmail } from "./email_router";
 
 describe("routeEmail", () => {
   it("throws when we can't route", () => {
