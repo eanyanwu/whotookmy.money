@@ -42,7 +42,6 @@ jobs:
             - node_modules
           key: v1-node-deps-{{ checksum "package-lock.json" }}
       - run: cp pkg/wtmm_server ansible/roles/deploy/files/bin
-      - run: cp node_modules/better-sqlite3/build/Release/better_sqlite3.node ansible/roles/deploy/files/bin
       - run: 'if [ "$CIRCLE_BRANCH" == "main" ]; then make ansible-deploy-prod; else make ansible-deploy; fi'
   provision:
     docker:

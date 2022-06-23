@@ -1,5 +1,5 @@
 run:
-	PORT=8080 npm run server
+	PORT=8080 npm run start
 
 check:
 	npm run check
@@ -11,10 +11,16 @@ fmt:
 	backend && npm run fmt
 
 build:
-	npm install && \
-		npm run build && \
-		pkg --target latest-linux-x64 --output pkg/wtmm_server --config package.json dist/index.js
-
+	# Install all dependencies. devDependencies are needed (e.g. typescript)
+	npm install
+	# Transpilie typescript to javascript.
+	npx tsc --outDir dist
+	# Copy assets over
+	mkdir -p dist/templates
+	cp src/templates/* dist/templates
+	# Use pkg to convert the resulting JS into a single executable
+	pkg --target node18-linux-x64 --output pkg/wtmm_server --config package.json dist/index.js 
+	
 # Just in case I start doing anything special for release builds 
 build-release: build
 
