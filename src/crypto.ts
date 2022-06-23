@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import config from "./config";
-import * as log from "./log"; 
+import * as log from "./log";
 
 // Create a message authentication code
 export const generateMac = (input: string): string => {

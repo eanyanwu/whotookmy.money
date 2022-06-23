@@ -6,9 +6,10 @@ check:
 
 test:
 	npm run test
+	npx prettier --list-different src
 
 fmt:
-	backend && npm run fmt
+	npx prettier --write src
 
 build:
 	# Install all dependencies. devDependencies are needed (e.g. typescript)
