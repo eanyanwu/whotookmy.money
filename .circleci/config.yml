@@ -16,12 +16,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - v1-node-deps-{{ checksum "package-lock.json" }}
+            - v2-node-deps-{{ checksum "package-lock.json" }}
       - run: make build
       - save_cache:
           paths:
             - node_modules
-          key: v1-node-deps-{{ checksum "package-lock.json" }}
+          key: v2-node-deps-{{ checksum "package-lock.json" }}
       - run: make test
   deploy:
     docker:
@@ -35,12 +35,12 @@ jobs:
       - add_ssh_keys
       - restore_cache:
           keys:
-            - v1-node-deps-{{ checksum "package-lock.json" }}
+            - v2-node-deps-{{ checksum "package-lock.json" }}
       - run: make build-release
       - save_cache:
           paths:
             - node_modules
-          key: v1-node-deps-{{ checksum "package-lock.json" }}
+          key: v2-node-deps-{{ checksum "package-lock.json" }}
       - run: cp pkg/wtmm_server ansible/roles/deploy/files/bin
       - run: 'if [ "$CIRCLE_BRANCH" == "main" ]; then make ansible-deploy-prod; else make ansible-deploy; fi'
   provision:
