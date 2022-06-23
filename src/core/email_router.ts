@@ -3,8 +3,8 @@ import { generateMac } from "../crypto";
 import { dollarStringToCents } from "../currency";
 import type { User } from "../data";
 import { getOrCreateUser, queueEmail, savePurchase } from "../data";
-import * as log from "../log";
 import { sendHttpRequestAsync } from "../http_request";
+import * as log from "../log";
 
 /* Known emails */
 export const SCHWAB_ALERT_EMAIL: string = "donotreply-comm@schwab.com";
@@ -48,10 +48,11 @@ const handleGmailForwardingConfirmation = async (email: InboundEmail) => {
 
   const lines = email.body.split("\n");
 
-  const confirmationCodeLine = lines.find(s => s.startsWith("Confirmation code:")) || "";
+  const confirmationCodeLine =
+    lines.find((s) => s.startsWith("Confirmation code:")) || "";
   const confirmationCode = confirmationCodeLine.split(" ").pop();
 
-  const confirmationURL = lines.find(s => s.startsWith("http"));
+  const confirmationURL = lines.find((s) => s.startsWith("http"));
 
   // The user's email is the very first thing on the first line. If we have
   // reached this point, it's safe to assume that there is at least one line
@@ -60,15 +61,15 @@ const handleGmailForwardingConfirmation = async (email: InboundEmail) => {
   if (!confirmationCode || !confirmationURL || !userEmail) {
     throw new InboundEmailError();
   }
-  
+
   // Making a post request to the URL with "Host: mail.google.com" confirms it
-  log.info({ email: userEmail }, "confirming gmail forwarding request")
+  log.info({ email: userEmail }, "confirming gmail forwarding request");
   await sendHttpRequestAsync({
     url: confirmationURL,
     method: "POST",
     headers: {
-      "Host": "mail.google.com",
-    }
+      Host: "mail.google.com",
+    },
   });
 
   const domain = config.get("emailDomain");
@@ -76,11 +77,11 @@ const handleGmailForwardingConfirmation = async (email: InboundEmail) => {
   // Send the confirmation code to the user as well
   queueEmail({
     sender: `alerts@${domain}`,
-    to: userEmail ,
+    to: userEmail,
     subject: "Gmail forwarding confirmation code",
     body: confirmationCode,
   });
-  
+
   // User is very likely going to be using the service.
   // Create them
   getOrCreateUser({ email: userEmail });
@@ -150,7 +151,7 @@ const sendWelcomeEmail = (user: User) => {
   });
 };
 
-export const routeEmail = (email: InboundEmail) => {
+export const routeEmail = async (email: InboundEmail) => {
   const msgid = email.messageId;
   const from = email.from;
   const to = email.to;
@@ -168,11 +169,11 @@ export const routeEmail = (email: InboundEmail) => {
   };
 
   const gmailForwardingConfirmation = (email: InboundEmail) => {
-    return email.from = "forwarding-noreply@google.com";
+    return email.from === "forwarding-noreply@google.com";
   };
 
   if (gmailForwardingConfirmation(email)) {
-    handleGmailForwardingConfirmation(email);
+    await handleGmailForwardingConfirmation(email);
   } else if (sentToInfo(email)) {
     const [user] = getOrCreateUser({ email: email.from });
     sendWelcomeEmail(user);
