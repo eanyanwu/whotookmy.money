@@ -1,18 +1,17 @@
 run:
-	cd backend && PORT=8080 npm run server
+	PORT=8080 npm run server
 
 check:
-	cd backend && npm run check
+	npm run check
 
 test:
-	cd backend && npm run test
+	npm run test
 
 fmt:
-	cd backend && npm run fmt
+	backend && npm run fmt
 
 build:
-	cd backend && \
-		npm install && \
+	npm install && \
 		npm run build && \
 		pkg --target latest-linux-x64 --output pkg/wtmm_server --config package.json dist/index.js
 
