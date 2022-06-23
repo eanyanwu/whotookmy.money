@@ -13,7 +13,7 @@ fmt:
 
 build:
 	# Install all dependencies. devDependencies are needed (e.g. typescript)
-	npm install
+	npm ci 
 	# Transpilie typescript to javascript.
 	npx tsc --outDir dist
 	# Copy assets over
