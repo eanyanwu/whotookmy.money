@@ -64,7 +64,11 @@ export const createOutboxMonitor = () => {
           // Assuming my usage of the API is correct, this could happen if
           // postmark is temporarily unavailable for example
           // Nothing much I can do beside just logging and moving on
-          error("error sending email. received non-successful response:", data);
+          error(
+            { status },
+            "error sending email. received non-successful response:",
+            data.toString()
+          );
         } else {
           markEmailSent(email);
         }
