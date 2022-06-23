@@ -80,7 +80,7 @@ export const sendHttpRequest = (
 export const sendHttpRequestAsync = (
   args: RequestArgs
 ): Promise<HttpResponse> => {
-  log.debug({ httpRequest: args });
+  log.debug({ httpRequest: JSON.stringify(args) });
   return new Promise((resolve, reject) => {
     sendHttpRequest(args, (err, resp) => {
       if (err) {
@@ -89,7 +89,7 @@ export const sendHttpRequestAsync = (
       }
 
       if (resp) {
-        log.debug({ httpResponse: resp });
+        log.debug({ httpResponse: JSON.stringify(resp) });
         resolve(resp);
         return;
       }
