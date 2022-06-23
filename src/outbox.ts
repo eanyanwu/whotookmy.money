@@ -36,7 +36,6 @@ export const createOutboxMonitor = () => {
   const start = async () => {
     info("polling for unsent outbound emails");
     const token = config.get("postmarkToken");
-    console.log({ token });
 
     while (true) {
       await sleep(10000);
