@@ -7,7 +7,7 @@ import type { Socket } from "net";
 import net from "net";
 import { verifyMac } from "./crypto";
 import type { HttpHandlerResponse } from "./http_handlers";
-import { dashboard, postmark } from "./http_handlers";
+import { dashboard, postmark, staticFile } from "./http_handlers";
 import { elapsed, info, timer } from "./log";
 
 type CreateServerOptions = {
@@ -134,6 +134,12 @@ export const createWtmmServer = (
     }
 
     return dashboard({ userId });
+  });
+
+  /* Serve static assets */
+  router.on("GET", "/public/*", (req, res) => {
+    const requestedURL = req.url!.slice(7);
+    return staticFile({ url: requestedURL });
   });
 
   const onRequest = async (
