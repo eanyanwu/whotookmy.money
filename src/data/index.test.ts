@@ -7,6 +7,7 @@ import {
   dailySpend,
   EmailRateLimit,
   getOrCreateUser,
+  getRecentPurchases,
   lookupUser,
   markEmailSent,
   NoRowsReturned,
@@ -268,5 +269,32 @@ describe("dailySpend", () => {
     assert.equal(spend[2].spend, 3600);
     assert.equal(spend[3].spend, 0);
     assert.equal(spend[4].spend, 0);
+  });
+});
+
+describe("getRecentPurchases", () => {
+  it("handles no purchases", () => {
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    const purchases = getRecentPurchases(user, 3);
+    assert.equal(purchases.length, 0);
+  });
+  it("retrieves only purchases in range", () => {
+    const c = open();
+
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    c.exec(
+      `INSERT INTO purchase (user_id, amount_in_cents, merchant, timestamp)
+      VALUES
+      (1, 1200, 'STORE', strftime('%s', 'now', '-4 days')),
+
+      (1, 2400, 'MOVIE', strftime('%s', 'now', '-3 days')),
+
+      (1, 3600, 'BOOKS', strftime('%s', 'now', '-2 day'));`
+    );
+
+    const purchases = getRecentPurchases(user, 3);
+
+    // only the last two purchases should be included
+    assert.equal(purchases.length, 2);
   });
 });

@@ -253,7 +253,6 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
   // Calculates the spend per day for the given user, The `calendar` table is a
   // recursive CTE allowing me to geneerate a timeseries starting at the user's
   // first purchase and ending today
-  //
   const spend = c
     .prepare(
       `WITH start as (
@@ -289,4 +288,25 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
     .all({ user_id: user.userId });
 
   return spend as DailySpend[];
+};
+
+/* Returns the user's purchases between now and `days` ago */
+export const getRecentPurchases = (user: User, days: number): Purchase[] => {
+  const c = open();
+
+  const purchases = c
+    .prepare(
+      `SELECT
+      purchase_id as purchaseId,
+      user_id as userId,
+      amount_in_cents as amountInCents,
+      merchant,
+      timestamp - 14400 as timestamp,
+      created_at
+    FROM purchase
+    WHERE user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')`
+    )
+    .all({ user_id: user.userId }) as Purchase[];
+
+  return purchases;
 };
