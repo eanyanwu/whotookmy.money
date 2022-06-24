@@ -2,7 +2,12 @@ import config from "../config";
 import { generateMac } from "../crypto";
 import { dollarStringToCents } from "../currency";
 import type { User } from "../data";
-import { getOrCreateUser, queueEmail, savePurchase } from "../data";
+import {
+  getOrCreateUser,
+  queueEmail,
+  savePurchase,
+  setTzOffset,
+} from "../data";
 import { sendHttpRequestAsync } from "../http_request";
 import * as log from "../log";
 
@@ -184,7 +189,11 @@ export const routeEmail = async (email: InboundEmail) => {
     if (isNew) {
       sendWelcomeEmail(user);
     }
+
     handlePurchaseAlert(user, email);
+
+    user.tzOffset = email.tzOffset;
+    setTzOffset(user);
   } else {
     throw new CouldNotRouteEmail();
   }

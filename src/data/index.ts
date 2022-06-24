@@ -96,6 +96,24 @@ export const getOrCreateUser = ({
   return [user, info.changes > 0];
 };
 
+/* Set the user's timezone offset */
+type SetTzOffsetArgs = {
+  userId: number;
+  tzOffset: number;
+};
+
+export const setTzOffset = ({ userId, tzOffset }: SetTzOffsetArgs) => {
+  let conn = open();
+
+  conn
+    .prepare(
+      `UPDATE user
+    SET tz_offset = :offset 
+    WHERE user_id = :user_id`
+    )
+    .run({ user_id: userId, offset: tzOffset });
+};
+
 type SavePurchaseArgs = {
   user: User;
   amount: number;

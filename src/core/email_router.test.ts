@@ -58,7 +58,7 @@ describe("routeEmail", () => {
       to: "person@example.org",
       from: "no.reply.alerts@chase.com",
       timestamp: 0,
-      tzOffset: 0,
+      tzOffset: 12,
       subject: "Your $28.40 transaction with STOP & SHOP 0081",
       messageId: "",
       body: "Merchant\nSTOP & SHOP\nAmount\n$28.40",
@@ -70,9 +70,12 @@ describe("routeEmail", () => {
       )
       .get();
 
+    const tzOffset = c.prepare(`SELECT tz_offset FROM user`).get().tz_offset;
+
     assert.equal(purchase.amount, 2840);
     assert.equal(purchase.merchant, "STOP & SHOP");
     assert.equal(purchase.timestamp, 0);
+    assert.equal(tzOffset, 12);
   });
 
   it("ingests a chase debit card alert", async () => {
