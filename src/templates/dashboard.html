@@ -12,13 +12,22 @@
     <style></style>
   </head>
   <body>
-    <header class="padded">
+    <header class="pa2 ma2">
       <h1>Summary</h1>
-      <p class="faded">{{ email }}</p>
+      <p class="o-60 fw6">{{ email }}</p>
     </header>
-    <section class="padded card">
+    <section class="pa2 ma2 card shadow-2 flex flex-column justify-between h4">
+      <div class=>
+        <p class="chart-caption">Total spend</p>
+      </div>
+      <div>
+        <span class="b f2">${{ totalSpend }}</span>
+        <span class="fw6 o-50">in the last {{ period }} days</span>
+      </div>
+    </section>
+    <section class="pa2 ma2 card shadow-2">
       <table>
-        <caption style="display: inline">
+        <caption class="chart-caption">
           Daily spend $
         </caption>
         <thead>
@@ -30,12 +39,12 @@
         <tbody>
           {{#spend}}
           <tr class="bar-container">
-            <td class="bar-x-axis tc faded">
+            <td class="bar-x-axis tc o-70">
               <div>{{ dayOfWeek }}</div>
               <div>{{ day }}</div>
             </td>
             <td class="bar">
-              <div class="bar-label tc">{{ spendInDollars }}</div>
+              <div class="bar-label fw6 o-50">{{ spendInDollars }}</div>
               <div
                 class="bar-fill"
                 style="height: {{ percentageOfMaxSpend }}%"

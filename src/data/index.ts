@@ -252,10 +252,11 @@ export const dailySpend = (user: User): DailySpend[] => {
   // Calculates the spend per day for the given user, The `calendar` table is a
   // recursive CTE allowing me to geneerate a timeseries starting at the user's
   // first purchase and ending today
+  //
   const spend = c
     .prepare(
-      `WITH first_purchase as (
-      SELECT MIN(timestamp) as timestamp
+      `WITH start as (
+      SELECT strftime('%s', 'now', '-10 days') as timestamp
       FROM purchase
       GROUP BY user_id
       HAVING user_id = :user_id
@@ -270,8 +271,8 @@ export const dailySpend = (user: User): DailySpend[] => {
       HAVING user_id = :user_id
     ),
     calendar as (
-      SELECT date(timestamp, 'unixepoch') as day
-      FROM first_purchase
+      SELECT date(timestamp - 14400, 'unixepoch') as day
+      FROM start 
       UNION ALL
       SELECT date(day, '+1 day')
       FROM calendar
