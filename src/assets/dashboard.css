@@ -27,6 +27,12 @@ section {
   padding: 0.5em 0.5em;
 }
 
+.chart-caption {
+  display: inline;
+  color: var(--blue);
+  font-weight: bold;
+}
+
 tbody {
   /* Put all the rows on a horizontal line */
   display: flex;
@@ -41,11 +47,8 @@ tbody {
 .bar-container {
   display: flex;
   flex-direction: column-reverse;
-  /* Bars grow to fill up the container width */
-  flex: 1 1 auto;
-
   /* Make each bar smol */
-  width: 0.3rem;
+  width: 2rem;
 }
 
 .bar {
@@ -71,14 +74,14 @@ tbody {
   border-radius: 3px 3px 0 0;
   box-shadow: 0px -1px 1px var(--light-gray);
   background-color: var(--orange);
-  /* Give space between bars */
-  margin-right: 3px;
+  margin: 0 3px;
 }
 
 .bar-label {
   color: #000;
   opacity: 0.7;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  text-align: center;
 }
 
 .card {
@@ -87,14 +90,7 @@ tbody {
 }
 
 /* UTILITY CLASSES */
-.padded {
-  margin: 0.5rem;
-  padding: 0.5rem;
-}
 
-.faded {
-  opacity: 0.7;
-}
 /* For when you want to hide something visually, but still keep it accessibel
  * to screen readers */
 .accessible-hide {

@@ -33,16 +33,18 @@ export const dashboard = async ({
     }
     throw err;
   }
-  const spend = dailySpend(user);
+
+  const period = 10;
+  const spend = dailySpend(user, period);
   const maxSpend = spend
     .map((s) => s.spend)
     .reduce((a, b) => Math.max(a, b), -Infinity);
+  const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
   const transformedSpend = spend.map(({ day, spend }) => {
     return {
       day: parseISO(day).getDate().toString().padStart(2, "0"),
       dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0, 3).toLowerCase(),
-      spend,
       spendInDollars: centsToDollarString(spend),
       percentageOfMaxSpend: Math.floor((spend / maxSpend) * 100),
     };
@@ -51,6 +53,8 @@ export const dashboard = async ({
   const view = {
     email: user.userEmail,
     spend: transformedSpend,
+    totalSpend: centsToDollarString(totalSpend),
+    period,
   };
 
   const output = Mustache.render(template, view);
