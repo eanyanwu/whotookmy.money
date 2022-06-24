@@ -23,9 +23,9 @@ describe("dollarStringToCents", () => {
 
 describe("centsToDollarString", () => {
   it("converts properly", () => {
-    assert.equal(centsToDollarString(0), "$0.00");
-    assert.equal(centsToDollarString(10), "$0.10");
-    assert.equal(centsToDollarString(100), "$1.00");
-    assert.equal(centsToDollarString(10000), "$100.00");
+    assert.equal(centsToDollarString(0), "0.00");
+    assert.equal(centsToDollarString(10), "0.10");
+    assert.equal(centsToDollarString(100), "1.00");
+    assert.equal(centsToDollarString(10000), "100.00");
   });
 });

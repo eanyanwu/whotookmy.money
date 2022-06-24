@@ -21,9 +21,6 @@ export const centsToDollarString = (i: number): string => {
     dollarStr.unshift("0");
   }
 
-  // place the dollar sign
-  dollarStr.unshift("$");
-
   return dollarStr.join("");
 };
 

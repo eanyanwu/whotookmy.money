@@ -1,33 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/public/dashboard.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css"
+    />
     <title>wtmm dashboard</title>
-    <style>
-    </style>
+    <style></style>
   </head>
   <body>
-    <h1>Summary</h1>
-    <p>{{ email }}</p>
-    <section>
+    <header class="padded">
+      <h1>Summary</h1>
+      <p class="faded">{{ email }}</p>
+    </header>
+    <section class="padded card">
       <table>
-        <caption>
-          Daily spend in dollars
+        <caption style="display: inline">
+          Daily spend $
         </caption>
         <thead>
           <tr>
-            <th scope="row">Date</th>
-            <th scope="row">Spend ($)</th>
+            <th class="accessible-hide" scope="row">Date</th>
+            <th class="accessible-hide" scope="row">Spend</th>
           </tr>
         </thead>
         <tbody>
           {{#spend}}
-          <tr class="bar">
-            <td>{{ dayOfWeek }}</td>
-            <td class="bar-data" style="height: {{ percentageOfMaxSpend }}%">
-              {{ spendInDollars }}
+          <tr class="bar-container">
+            <td class="bar-x-axis tc faded">
+              <div>{{ dayOfWeek }}</div>
+              <div>{{ day }}</div>
+            </td>
+            <td class="bar">
+              <div class="bar-label tc">{{ spendInDollars }}</div>
+              <div
+                class="bar-fill"
+                style="height: {{ percentageOfMaxSpend }}%"
+              ></div>
             </td>
           </tr>
           {{/spend}}

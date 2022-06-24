@@ -40,8 +40,8 @@ export const dashboard = async ({
 
   const transformedSpend = spend.map(({ day, spend }) => {
     return {
-      day,
-      dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0, 3),
+      day: parseISO(day).getDate().toString().padStart(2, "0"),
+      dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0, 3).toLowerCase(),
       spend,
       spendInDollars: centsToDollarString(spend),
       percentageOfMaxSpend: Math.floor((spend / maxSpend) * 100),

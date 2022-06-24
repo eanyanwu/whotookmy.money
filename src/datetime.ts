@@ -32,11 +32,11 @@ export const toUnixTimestamp = (d: Date): number => {
 };
 
 export const WEEKDAYS = [
+  "Sunday",
   "Monday",
   "Tuesday",
   "Wednesday",
   "Thursday",
   "Friday",
   "Saturday",
-  "Sunday",
 ];

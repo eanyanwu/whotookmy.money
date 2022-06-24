@@ -139,7 +139,7 @@ export const createWtmmServer = (
   /* Serve static assets */
   router.on("GET", "/public/*", (req, res) => {
     const requestedURL = req.url!.slice(7);
-    return staticFile({ url: requestedURL }); 
+    return staticFile({ url: requestedURL });
   });
 
   const onRequest = async (
