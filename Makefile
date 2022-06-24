@@ -18,7 +18,9 @@ build:
 	npx tsc --outDir dist
 	# Copy assets over
 	mkdir -p dist/templates
+	mkdir -p dist/assets
 	cp src/templates/* dist/templates
+	cp src/assets/* dist/assets
 	# Use pkg to convert the resulting JS into a single executable
 	pkg --target node18-linux-x64 --output pkg/wtmm_server --config package.json dist/index.js 
 	
