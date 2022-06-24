@@ -13,6 +13,7 @@ import {
   pollUnsentEmail,
   queueEmail,
   savePurchase,
+  setTzOffset,
 } from "./index";
 
 let FILE: string;
@@ -54,6 +55,17 @@ describe("getOrCreateUser", () => {
     assert.equal(count, 1);
     assert.equal(user.tzOffset, 13);
     assert.equal(isNew, false);
+  });
+});
+
+describe("setTzOffset", () => {
+  it("sets tz_offset", () => {
+    const [user] = getOrCreateUser({ email: "hello@example.com" });
+    assert.equal(user.tzOffset, 0);
+    user.tzOffset = 12;
+    setTzOffset(user);
+    const [modified] = getOrCreateUser({ email: user.userEmail });
+    assert.equal(user.tzOffset, 12);
   });
 });
 
