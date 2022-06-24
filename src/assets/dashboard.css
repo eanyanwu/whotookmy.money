@@ -3,7 +3,8 @@
   --dark-blue: #005689;
   --blue: #007cb9;
   --light-blue: #d5eeff;
-  --orange: #cf5c36;
+  /* --orange: #cf5c36; */
+  --orange: #ec4067;
   --light-gray: #eee5e9;
   --gray: #7c7c7c;
 }
@@ -28,7 +29,6 @@ section {
 }
 
 .chart-caption {
-  display: inline;
   color: var(--blue);
   font-weight: bold;
 }
@@ -49,6 +49,9 @@ tbody {
   flex-direction: column-reverse;
   /* Make each bar smol */
   width: 2rem;
+}
+.bar-container-selected {
+  background-color: var(--light-gray);
 }
 
 .bar {
@@ -87,6 +90,12 @@ tbody {
 .card {
   background-color: #fff;
   border-radius: 7px;
+}
+
+.purchase-detail {
+  max-height: 6rem;
+  overflow: scroll;
+  z-index: 10;
 }
 
 /* UTILITY CLASSES */

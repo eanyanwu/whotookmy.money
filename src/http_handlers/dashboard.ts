@@ -1,10 +1,14 @@
-import getDay from "date-fns/getDay";
-import parseISO from "date-fns/parseISO";
+import { formatISO, fromUnixTime, getDay, parseISO } from "date-fns";
 import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
 import { centsToDollarString } from "../currency";
-import { dailySpend, lookupUser, NoRowsReturned } from "../data";
+import {
+  dailySpend,
+  getRecentPurchases,
+  lookupUser,
+  NoRowsReturned,
+} from "../data";
 import { WEEKDAYS } from "../datetime";
 import * as log from "../log";
 import type { HttpHandlerResponse } from "./http_handler";
@@ -34,15 +38,20 @@ export const dashboard = async ({
     throw err;
   }
 
+  // Only display purchases from the past 10 days
   const period = 10;
   const spend = dailySpend(user, period);
+  const purchases = getRecentPurchases(user, period);
+
   const maxSpend = spend
     .map((s) => s.spend)
     .reduce((a, b) => Math.max(a, b), -Infinity);
+
   const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
   const transformedSpend = spend.map(({ day, spend }) => {
     return {
+      date: day,
       day: parseISO(day).getDate().toString().padStart(2, "0"),
       dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0, 3).toLowerCase(),
       spendInDollars: centsToDollarString(spend),
@@ -50,10 +59,44 @@ export const dashboard = async ({
     };
   });
 
+  type PurchaseView = { merchant: string; amount: string };
+  let purchaseByDate = purchases.reduce(
+    (acc: Record<string, PurchaseView[]>, curr) => {
+      const date = formatISO(fromUnixTime(curr.timestamp), {
+        representation: "date",
+      });
+      if (!acc[date]) {
+        acc[date] = [
+          {
+            merchant: curr.merchant,
+            amount: centsToDollarString(curr.amountInCents),
+          },
+        ];
+      } else {
+        acc[date].push({
+          merchant: curr.merchant,
+          amount: centsToDollarString(curr.amountInCents),
+        });
+      }
+      return acc;
+    },
+    {}
+  );
+
+  // transform the dictionary to an array for easier templating
+  let purchaseListByDate = [];
+  for (const [key, vals] of Object.entries(purchaseByDate)) {
+    purchaseListByDate.push({
+      date: key,
+      purchases: vals,
+    });
+  }
+
   const view = {
     email: user.userEmail,
     spend: transformedSpend,
     totalSpend: centsToDollarString(totalSpend),
+    purchaseByDate: purchaseListByDate,
     period,
   };
 
