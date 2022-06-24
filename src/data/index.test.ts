@@ -244,7 +244,7 @@ describe("markEmailSent & pollUnsentEmail", () => {
 describe("dailySpend", () => {
   it("with no purchases", () => {
     const [user] = getOrCreateUser({ email: "person@example.org" });
-    const spend = dailySpend(user);
+    const spend = dailySpend(user, 10);
     assert.deepStrictEqual(spend, []);
   });
   it("with purchases", () => {
@@ -261,7 +261,7 @@ describe("dailySpend", () => {
       (1, 3600, 'BOOKS', strftime('%s', 'now', '-2 day'));`
     );
 
-    const spend = dailySpend(user);
+    const spend = dailySpend(user, 4);
     assert.equal(spend.length, 5);
     assert.equal(spend[0].spend, 2400);
     assert.equal(spend[1].spend, 2400);

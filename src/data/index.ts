@@ -245,8 +245,9 @@ export const markEmailSent = (e: OutboundEmail) => {
   ).run(e.outboundEmailId);
 };
 
+/* Returns the user's daily spend over the period */
 export type DailySpend = { day: string; spend: number };
-export const dailySpend = (user: User): DailySpend[] => {
+export const dailySpend = (user: User, period: number): DailySpend[] => {
   const c = open();
 
   // Calculates the spend per day for the given user, The `calendar` table is a
@@ -256,7 +257,7 @@ export const dailySpend = (user: User): DailySpend[] => {
   const spend = c
     .prepare(
       `WITH start as (
-      SELECT strftime('%s', 'now', '-10 days') as timestamp
+      SELECT strftime('%s', 'now', '-${period} days') as timestamp
       FROM purchase
       GROUP BY user_id
       HAVING user_id = :user_id

@@ -34,13 +34,12 @@ export const dashboard = async ({
     throw err;
   }
 
-  const spend = dailySpend(user);
+  const period = 10;
+  const spend = dailySpend(user, period);
   const maxSpend = spend
     .map((s) => s.spend)
     .reduce((a, b) => Math.max(a, b), -Infinity);
-  const totalSpend = spend
-    .map((s) => s.spend)
-    .reduce((a, b) => a + b, 0);
+  const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
   const transformedSpend = spend.map(({ day, spend }) => {
     return {
@@ -55,7 +54,7 @@ export const dashboard = async ({
     email: user.userEmail,
     spend: transformedSpend,
     totalSpend: centsToDollarString(totalSpend),
-    period: 10,
+    period,
   };
 
   const output = Mustache.render(template, view);
