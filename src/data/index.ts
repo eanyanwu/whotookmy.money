@@ -245,7 +245,7 @@ export const dailySpend = (user: User): DailySpend[] => {
     daily_spend as (
       SELECT
         user_id,
-        date(timestamp, 'unixepoch') as day,
+        date(timestamp - 14400, 'unixepoch') as day,
         SUM(amount_in_cents) as spend
       FROM purchase
       GROUP BY user_id, day
