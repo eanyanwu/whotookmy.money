@@ -22,7 +22,7 @@ build:
 	cp src/templates/* dist/templates
 	cp src/assets/* dist/assets
 	# Use pkg to convert the resulting JS into a single executable
-	pkg --target node18-linux-x64 --output pkg/wtmm_server --config package.json dist/index.js 
+	pkg --target node16-linux-x64 --output pkg/wtmm_server --config package.json dist/index.js 
 	
 # Just in case I start doing anything special for release builds 
 build-release: build

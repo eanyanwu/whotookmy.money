@@ -1,4 +1,4 @@
-FROM node:18-bullseye
+FROM node:16.15.1-bullseye
 
 
 RUN apt-get --yes update
