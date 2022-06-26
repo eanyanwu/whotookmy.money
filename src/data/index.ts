@@ -71,22 +71,17 @@ export const lookupPurchase = ({ id }: { id: number }): Purchase => {
   const purchase = c
     .prepare(
       `
-      WITH amend as (
-        SELECT purchase_id, new_amount_in_cents, new_merchant
-        FROM purchase_amendment
-        WHERE purchase_id = :id
-      )
       SELECT
         p.purchase_id as purchaseId,
         p.user_id as userId,
-        COALESCE(a.new_amount_in_cents, p.amount_in_cents) as amountInCents,
-        COALESCE(a.new_merchant, p.merchant) as merchant,
-        timestamp,
-        a.purchase_id IS NOT NULL as isAmended,
+        p.amount_in_cents as amountInCents,
+        p.merchant as merchant,
+        p.timestamp + user.tz_offset as timestamp,
+        p.is_amended as isAmended,
         p.created_at as createdAt
-      FROM purchase as p
-      LEFT JOIN amend as a
-      ON a.purchase_id = p.purchase_id
+      FROM amended_purchase as p
+      INNER JOIN user
+      ON user.user_id = p.user_id
       WHERE p.purchase_id = :id`
     )
     .get({ id }) as Purchase;
@@ -165,20 +160,17 @@ export const savePurchase = ({
 }: SavePurchaseArgs): Purchase => {
   const conn = open();
 
-  return conn
+  const res = conn
     .prepare(
-      `INSERT INTO purchase (user_id, amount_in_cents, merchant, timestamp)
-    VALUES (:id, :amount, :merchant, :timestamp)
-    RETURNING
-      purchase_id as purchaseId,
-      user_id as userId,
-      amount_in_cents as amountInCents,
-      merchant,
-      timestamp,
-      0 as isAmended,
-      created_at as createdAt`
+      `
+      INSERT INTO purchase (user_id, amount_in_cents, merchant, timestamp)
+      VALUES (:id, :amount, :merchant, :timestamp)`
     )
-    .get({ id: user.userId, amount, merchant, timestamp }) as Purchase;
+    .run({ id: user.userId, amount, merchant, timestamp });
+
+  // TODO: The row id might overflow javascripts number.
+  // I need to eventually support the ids being of type BigInt
+  return lookupPurchase({ id: res.lastInsertRowid as number });
 };
 
 type QueueEmailArgs = {
@@ -292,37 +284,39 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
   // first purchase and ending today
   const spend = c
     .prepare(
-      `WITH start as (
-      SELECT strftime('%s', 'now', '-${period} days') as timestamp
-      FROM purchase
-      GROUP BY user_id
-      HAVING user_id = :user_id
-    ),
-    daily_spend as (
+      `
+      WITH start as (
+        SELECT strftime('%s', 'now', '-${period} days') + tz_offset as timestamp
+        FROM user
+        WHERE user_id = :user_id
+      ),
+      daily_spend as (
+        SELECT
+          p.user_id,
+          date(timestamp + u.tz_offset, 'unixepoch') as day,
+          SUM(p.amount_in_cents) as spend
+        FROM amended_purchase as p
+        INNER JOIN user as u
+        ON u.user_id = p.user_id
+        GROUP BY p.user_id, day
+        HAVING p.user_id = :user_id
+      ),
+      calendar as (
+        SELECT date(timestamp, 'unixepoch') as day
+        FROM start 
+        UNION ALL
+        SELECT date(day, '+1 day')
+        FROM calendar
+        WHERE day < date()
+      )
       SELECT
-        user_id,
-        date(timestamp - 14400, 'unixepoch') as day,
-        SUM(amount_in_cents) as spend
-      FROM purchase
-      GROUP BY user_id, day
-      HAVING user_id = :user_id
-    ),
-    calendar as (
-      SELECT date(timestamp - 14400, 'unixepoch') as day
-      FROM start 
-      UNION ALL
-      SELECT date(day, '+1 day')
+        calendar.day as day,
+        COALESCE(daily_spend.spend, 0) as spend
       FROM calendar
-      WHERE day < date()
-    )
-    SELECT
-      calendar.day as day,
-      COALESCE(daily_spend.spend, 0) as spend
-    FROM calendar
-    LEFT JOIN daily_spend
-    ON calendar.day = daily_spend.day
-    ORDER BY calendar.day
-    `
+      LEFT JOIN daily_spend
+      ON calendar.day = daily_spend.day
+      ORDER BY calendar.day
+      `
     )
     .all({ user_id: user.userId });
 
@@ -335,22 +329,18 @@ export const getRecentPurchases = (user: User, days: number): Purchase[] => {
 
   const purchases = c
     .prepare(
-      `WITH amend as (
-        SELECT purchase_id, new_amount_in_cents, new_merchant
-        FROM purchase_amendment
-      )
-      SELECT
+      `SELECT
         p.purchase_id as purchaseId,
         p.user_id as userId,
-        COALESCE(a.new_amount_in_cents, p.amount_in_cents) as amountInCents,
-        COALESCE(a.new_merchant, p.merchant) as merchant,
-        p.timestamp - 14400 as timestamp,
-        a.purchase_id IS NOT NULL as isAmended,
-        p.created_at
-      FROM purchase as p
-      LEFT JOIN amend as a
-      ON a.purchase_id = p.purchase_id
-      WHERE user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')`
+        p.amount_in_cents as amountInCents,
+        p.merchant,
+        p.timestamp + user.tz_offset as timestamp,
+        p.is_amended as isAmended,
+        p.created_at as createdAt
+      FROM amended_purchase as p
+      INNER JOIN user
+      ON user.user_id = p.user_id
+      WHERE p.user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')`
     )
     .all({ user_id: user.userId }) as Purchase[];
 
