@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import Mustache from "mustache";
 import path from "path";
 import { type User } from "../data";
 import type { HttpHandlerResponse } from "./http_handler";
@@ -10,6 +11,11 @@ export const purchases = async (user: User): Promise<HttpHandlerResponse> => {
       encoding: "utf-8",
     }
   );
+  const output = Mustache.render(template, {});
 
-  return { statusCode: 404 };
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "text/html" },
+    data: output,
+  };
 };

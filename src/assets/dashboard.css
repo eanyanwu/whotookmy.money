@@ -3,8 +3,7 @@
   --dark-blue: #005689;
   --blue: #007cb9;
   --light-blue: #d5eeff;
-  /* --orange: #cf5c36; */
-  --orange: #ec4067;
+  --pink: #ec4067;
   --light-gray: #eee5e9;
   --gray: #7c7c7c;
 }
@@ -33,6 +32,16 @@ section {
   font-weight: bold;
 }
 
+.nav-link {
+  font-weight: bold;
+  display: inline-block;
+  background-color: var(--blue);
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid black;
+  padding: 0.3rem 0.3rem;
+}
+
 tbody {
   /* Put all the rows on a horizontal line */
   display: flex;
@@ -47,9 +56,10 @@ tbody {
 .bar-container {
   display: flex;
   flex-direction: column-reverse;
-  /* Make each bar smol */
-  width: 2rem;
+  /* Let bars grow to fill the available space */
+  flex: 1;
 }
+
 .bar-container-selected {
   background-color: var(--light-gray);
 }
@@ -76,7 +86,7 @@ tbody {
   /* Give bars a rounded look */
   border-radius: 3px 3px 0 0;
   box-shadow: 0px -1px 1px var(--light-gray);
-  background-color: var(--orange);
+  background-color: var(--pink);
   margin: 0 3px;
 }
 

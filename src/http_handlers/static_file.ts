@@ -42,13 +42,16 @@ export const staticFile = async ({
     return { statusCode: 404 };
   }
 
-  const file = await fs.readFile(pathToFile, { encoding: "utf-8" });
-
-  return {
-    statusCode: 200,
-    headers: {
-      "Content-Type": mimeType,
-    },
-    data: file,
-  };
+  try {
+    const file = await fs.readFile(pathToFile, { encoding: "utf-8" });
+    return {
+      statusCode: 200,
+      headers: {
+        "Content-Type": mimeType,
+      },
+      data: file,
+    };
+  } catch (_err) {
+    return { statusCode: 404 };
+  }
 };
