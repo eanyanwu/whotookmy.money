@@ -63,21 +63,29 @@ export const lookupUser = ({ id }: { id: number }): User => {
   return user;
 };
 
-/* Lookup a purchase by id */
+/* Lookup a purchase by id. Any purchase amendments are automatically applied */
 export const lookupPurchase = ({ id }: { id: number }): Purchase => {
   const c = open();
 
   const purchase = c
     .prepare(
-      `SELECT
-        purchase_id as purchaseId,
-        user_id as userId,
-        amount_in_cents as amountInCents,
-        merchant,
+      `
+      WITH amend as (
+        SELECT purchase_id, new_amount_in_cents, new_merchant
+        FROM purchase_amendment
+        WHERE purchase_id = :id
+      )
+      SELECT
+        p.purchase_id as purchaseId,
+        p.user_id as userId,
+        COALESCE(a.new_amount_in_cents, p.amount_in_cents) as amountInCents,
+        COALESCE(a.new_merchant, p.merchant) as merchant,
         timestamp,
         created_at as createdAt
-      FROM purchase
-      WHERE purchase_id = :id`
+      FROM purchase as p
+      LEFT JOIN amend as a
+      ON a.purchase_id = p.purchase_id
+      WHERE p.purchase_id = :id`
     )
     .get({ id }) as Purchase;
 

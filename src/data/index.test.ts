@@ -347,12 +347,12 @@ describe("amendPurchase", () => {
       newMerchant: "MANSION",
     });
 
-    // The purchase row should not have changed
+    // Looking up the purchase should reflect the change
     const purchase = lookupPurchase({ id: 1 });
-    assert.equal(purchase.amountInCents, 10);
-    assert.equal(purchase.merchant, "HOTEL");
+    assert.equal(purchase.amountInCents, 100);
+    assert.equal(purchase.merchant, "MANSION");
 
-    // But a new amendment should have been created
+    // A new amendment should have been created
     const amendment = c
       .prepare(
         `SELECT
