@@ -95,26 +95,20 @@ describe("lookupUser", () => {
 describe("savePurchase", () => {
   it("creates a new purchase for user", () => {
     const c = open();
-    const [user, _] = getOrCreateUser({ email: "person@example.org" });
-    savePurchase({
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    const purchase = savePurchase({
       user,
       amount: 1000,
       merchant: "AIRBNB",
       timestamp: 1,
     });
 
-    const purchase = c
-      .prepare(
-        `SELECT user_id, amount_in_cents, merchant, timestamp, created_at
-      FROM purchase`
-      )
-      .get();
-
-    assert.equal(purchase.user_id, 1);
-    assert.equal(purchase.amount_in_cents, 1000);
+    assert.equal(purchase.userId, 1);
+    assert.equal(purchase.amountInCents, 1000);
     assert.equal(purchase.merchant, "AIRBNB");
     assert.equal(purchase.timestamp, 1);
-    assert.ok(purchase.created_at);
+    assert.equal(purchase.isAmended, 0);
+    assert.ok(purchase.createdAt);
   });
 });
 
@@ -340,7 +334,13 @@ describe("amendPurchase", () => {
     const c = open();
 
     const [user] = getOrCreateUser({ email: "person@example.org" });
-    savePurchase({ user, amount: 10, merchant: "HOTEL", timestamp: 1 });
+    savePurchase({
+      user,
+      amount: 10,
+      merchant: "HOTEL",
+      // timestamp is in seconds
+      timestamp: Date.now() / 1000,
+    });
     amendPurchase({
       purchaseId: 1,
       newAmountInCents: 100,
@@ -351,6 +351,14 @@ describe("amendPurchase", () => {
     const purchase = lookupPurchase({ id: 1 });
     assert.equal(purchase.amountInCents, 100);
     assert.equal(purchase.merchant, "MANSION");
+    assert.equal(purchase.isAmended, 1);
+
+    // Looking up most recent purchases should also reflect the change
+    const recent = getRecentPurchases(user, 2);
+    assert.equal(recent.length, 1);
+    assert.equal(recent[0].amountInCents, 100);
+    assert.equal(recent[0].merchant, "MANSION");
+    assert.equal(recent[0].isAmended, 1);
 
     // A new amendment should have been created
     const amendment = c
