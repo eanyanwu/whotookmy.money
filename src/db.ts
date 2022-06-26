@@ -43,7 +43,17 @@ CREATE TABLE user_report_outbound_email (
 );
 `;
 
-const MIGRATIONS: M[] = [];
+const MIGRATIONS: M[] = [
+  M.up(
+    `CREATE TABLE purchase_amendment (
+            purchase_amendment_id INTEGER PRIMARY KEY,
+            purchase_id INTEGER UNIQUE NOT NULL REFERENCES purchase(purchase_id) ON DELETE CASCADE,
+            new_amount_in_cents INTEGER NOT NULL,
+            new_merchant TEXT NOT NULL,
+            created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
+        );`
+  ),
+];
 
 /* Creates and returns a connection to the database */
 export const open = () => {

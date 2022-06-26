@@ -63,6 +63,31 @@ export const lookupUser = ({ id }: { id: number }): User => {
   return user;
 };
 
+/* Lookup a purchase by id */
+export const lookupPurchase = ({ id }: { id: number }): Purchase => {
+  const c = open();
+
+  const purchase = c
+    .prepare(
+      `SELECT
+        purchase_id as purchaseId,
+        user_id as userId,
+        amount_in_cents as amountInCents,
+        merchant,
+        timestamp,
+        created_at as createdAt
+      FROM purchase
+      WHERE purchase_id = :id`
+    )
+    .get({ id }) as Purchase;
+
+  if (!purchase) {
+    throw new NoRowsReturned();
+  }
+
+  return purchase;
+};
+
 /*
  * Returns the user with the given email, creates them if they don't exist
  * The second part of the tuple indicates if the user was actually created or not
@@ -309,4 +334,26 @@ export const getRecentPurchases = (user: User, days: number): Purchase[] => {
     .all({ user_id: user.userId }) as Purchase[];
 
   return purchases;
+};
+
+type AmendPurchaseArgs = {
+  purchaseId: number;
+  newAmountInCents: number;
+  newMerchant: string;
+};
+export const amendPurchase = (amended: AmendPurchaseArgs) => {
+  const c = open();
+
+  // make sure the purchase exists.
+  lookupPurchase({ id: amended.purchaseId });
+
+  // create a purchase amendment, or update an existing one
+  c.prepare(
+    `INSERT INTO purchase_amendment (purchase_id, new_amount_in_cents, new_merchant)
+    VALUES (:purchaseId, :newAmountInCents, :newMerchant)
+    ON CONFLICT (purchase_id)
+    DO UPDATE SET
+    new_amount_in_cents = excluded.new_amount_in_cents,
+    new_merchant = excluded.new_merchant`
+  ).run(amended);
 };
