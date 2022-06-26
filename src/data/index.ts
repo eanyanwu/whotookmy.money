@@ -25,6 +25,7 @@ export type Purchase = {
   amountInCents: number;
   merchant: string;
   timestamp: number;
+  isAmended: 0 | 1;
   createdAt: number;
 };
 
@@ -61,6 +62,40 @@ export const lookupUser = ({ id }: { id: number }): User => {
   }
 
   return user;
+};
+
+/* Lookup a purchase by id. Any purchase amendments are automatically applied */
+export const lookupPurchase = ({ id }: { id: number }): Purchase => {
+  const c = open();
+
+  const purchase = c
+    .prepare(
+      `
+      WITH amend as (
+        SELECT purchase_id, new_amount_in_cents, new_merchant
+        FROM purchase_amendment
+        WHERE purchase_id = :id
+      )
+      SELECT
+        p.purchase_id as purchaseId,
+        p.user_id as userId,
+        COALESCE(a.new_amount_in_cents, p.amount_in_cents) as amountInCents,
+        COALESCE(a.new_merchant, p.merchant) as merchant,
+        timestamp,
+        a.purchase_id IS NOT NULL as isAmended,
+        p.created_at as createdAt
+      FROM purchase as p
+      LEFT JOIN amend as a
+      ON a.purchase_id = p.purchase_id
+      WHERE p.purchase_id = :id`
+    )
+    .get({ id }) as Purchase;
+
+  if (!purchase) {
+    throw new NoRowsReturned();
+  }
+
+  return purchase;
 };
 
 /*
@@ -139,7 +174,9 @@ export const savePurchase = ({
       user_id as userId,
       amount_in_cents as amountInCents,
       merchant,
-      timestamp`
+      timestamp,
+      0 as isAmended,
+      created_at as createdAt`
     )
     .get({ id: user.userId, amount, merchant, timestamp }) as Purchase;
 };
@@ -283,7 +320,9 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
       COALESCE(daily_spend.spend, 0) as spend
     FROM calendar
     LEFT JOIN daily_spend
-    ON calendar.day = daily_spend.day`
+    ON calendar.day = daily_spend.day
+    ORDER BY calendar.day
+    `
     )
     .all({ user_id: user.userId });
 
@@ -296,17 +335,46 @@ export const getRecentPurchases = (user: User, days: number): Purchase[] => {
 
   const purchases = c
     .prepare(
-      `SELECT
-      purchase_id as purchaseId,
-      user_id as userId,
-      amount_in_cents as amountInCents,
-      merchant,
-      timestamp - 14400 as timestamp,
-      created_at
-    FROM purchase
-    WHERE user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')`
+      `WITH amend as (
+        SELECT purchase_id, new_amount_in_cents, new_merchant
+        FROM purchase_amendment
+      )
+      SELECT
+        p.purchase_id as purchaseId,
+        p.user_id as userId,
+        COALESCE(a.new_amount_in_cents, p.amount_in_cents) as amountInCents,
+        COALESCE(a.new_merchant, p.merchant) as merchant,
+        p.timestamp - 14400 as timestamp,
+        a.purchase_id IS NOT NULL as isAmended,
+        p.created_at
+      FROM purchase as p
+      LEFT JOIN amend as a
+      ON a.purchase_id = p.purchase_id
+      WHERE user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')`
     )
     .all({ user_id: user.userId }) as Purchase[];
 
   return purchases;
+};
+
+type AmendPurchaseArgs = {
+  purchaseId: number;
+  newAmountInCents: number;
+  newMerchant: string;
+};
+export const amendPurchase = (amended: AmendPurchaseArgs) => {
+  const c = open();
+
+  // make sure the purchase exists.
+  lookupPurchase({ id: amended.purchaseId });
+
+  // create a purchase amendment, or update an existing one
+  c.prepare(
+    `INSERT INTO purchase_amendment (purchase_id, new_amount_in_cents, new_merchant)
+    VALUES (:purchaseId, :newAmountInCents, :newMerchant)
+    ON CONFLICT (purchase_id)
+    DO UPDATE SET
+    new_amount_in_cents = excluded.new_amount_in_cents,
+    new_merchant = excluded.new_merchant`
+  ).run(amended);
 };

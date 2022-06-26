@@ -64,7 +64,7 @@ export const createServerAsync = (
 
 const router = setup_router({
   ignoreTrailingSlash: true,
-  defaultRoute: (req, res) => {
+  defaultRoute: (_req, _res) => {
     return Promise.resolve({ statusCode: 404 });
   },
 });
@@ -96,12 +96,12 @@ type CreateWtmmServerOptions = Omit<CreateServerAsyncOptions, "onRequest">;
 export const createWtmmServer = (
   opts: CreateWtmmServerOptions
 ): Promise<http.Server> => {
-  router.on("POST", "/postmark_webhook", async (req, res, params) => {
+  router.on("POST", "/postmark_webhook", async (req, _res, _params) => {
     let payload = await readRequestPayload(req);
     return postmark({ payload });
   });
 
-  router.on("GET", "/dashboard", async (req, res, params) => {
+  router.on("GET", "/dashboard", async (req, _res, _params) => {
     let url = req.url!;
     let qsIdx = url.indexOf("?");
 
@@ -137,7 +137,7 @@ export const createWtmmServer = (
   });
 
   /* Serve static assets */
-  router.on("GET", "/public/*", (req, res) => {
+  router.on("GET", "/public/*", (req, _res) => {
     const requestedURL = req.url!.slice(7);
     return staticFile({ url: requestedURL });
   });

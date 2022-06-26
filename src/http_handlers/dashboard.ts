@@ -16,6 +16,7 @@ import type { HttpHandlerResponse } from "./http_handler";
 type DashboardHandlerArgs = {
   userId: number;
 };
+
 /* Render a user's dashboard */
 export const dashboard = async ({
   userId,

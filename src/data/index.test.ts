@@ -4,10 +4,12 @@ import fs from "fs/promises";
 import config from "../config";
 import { open, open_and_init } from "../db";
 import {
+  amendPurchase,
   dailySpend,
   EmailRateLimit,
   getOrCreateUser,
   getRecentPurchases,
+  lookupPurchase,
   lookupUser,
   markEmailSent,
   NoRowsReturned,
@@ -93,26 +95,20 @@ describe("lookupUser", () => {
 describe("savePurchase", () => {
   it("creates a new purchase for user", () => {
     const c = open();
-    const [user, _] = getOrCreateUser({ email: "person@example.org" });
-    savePurchase({
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    const purchase = savePurchase({
       user,
       amount: 1000,
       merchant: "AIRBNB",
       timestamp: 1,
     });
 
-    const purchase = c
-      .prepare(
-        `SELECT user_id, amount_in_cents, merchant, timestamp, created_at
-      FROM purchase`
-      )
-      .get();
-
-    assert.equal(purchase.user_id, 1);
-    assert.equal(purchase.amount_in_cents, 1000);
+    assert.equal(purchase.userId, 1);
+    assert.equal(purchase.amountInCents, 1000);
     assert.equal(purchase.merchant, "AIRBNB");
     assert.equal(purchase.timestamp, 1);
-    assert.ok(purchase.created_at);
+    assert.equal(purchase.isAmended, 0);
+    assert.ok(purchase.createdAt);
   });
 });
 
@@ -296,5 +292,123 @@ describe("getRecentPurchases", () => {
 
     // only the last two purchases should be included
     assert.equal(purchases.length, 2);
+  });
+});
+
+describe("lookupPurchase", () => {
+  it("finds existing purchase", () => {
+    const c = open();
+
+    getOrCreateUser({ email: "person@example.org" });
+    c.prepare(
+      `INSERT INTO purchase (user_id, amount_in_cents, merchant, timestamp, created_at)
+      VALUES (1, 1200, 'STORE', 1, 2)`
+    ).run();
+
+    const purchase = lookupPurchase({ id: 1 });
+
+    assert.equal(purchase.purchaseId, 1);
+    assert.equal(purchase.amountInCents, 1200);
+    assert.equal(purchase.merchant, "STORE");
+    assert.equal(purchase.timestamp, 1);
+    assert.equal(purchase.createdAt, 2);
+  });
+  it("fails when purchase is not found", () => {
+    assert.throws(() => lookupPurchase({ id: 1 }), NoRowsReturned);
+  });
+});
+
+describe("amendPurchase", () => {
+  it("fails when purchase does not exist", () => {
+    assert.throws(
+      () =>
+        amendPurchase({
+          purchaseId: 1,
+          newAmountInCents: 100,
+          newMerchant: "MANSION",
+        }),
+      NoRowsReturned
+    );
+  });
+  it("creates a purchase amendment if one does not exist", () => {
+    const c = open();
+
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    savePurchase({
+      user,
+      amount: 10,
+      merchant: "HOTEL",
+      // timestamp is in seconds
+      timestamp: Date.now() / 1000,
+    });
+    amendPurchase({
+      purchaseId: 1,
+      newAmountInCents: 100,
+      newMerchant: "MANSION",
+    });
+
+    // Looking up the purchase should reflect the change
+    const purchase = lookupPurchase({ id: 1 });
+    assert.equal(purchase.amountInCents, 100);
+    assert.equal(purchase.merchant, "MANSION");
+    assert.equal(purchase.isAmended, 1);
+
+    // Looking up most recent purchases should also reflect the change
+    const recent = getRecentPurchases(user, 2);
+    assert.equal(recent.length, 1);
+    assert.equal(recent[0].amountInCents, 100);
+    assert.equal(recent[0].merchant, "MANSION");
+    assert.equal(recent[0].isAmended, 1);
+
+    // A new amendment should have been created
+    const amendment = c
+      .prepare(
+        `SELECT
+        purchase_id,
+        new_amount_in_cents,
+        new_merchant
+      FROM purchase_amendment`
+      )
+      .raw()
+      .all();
+
+    assert.deepStrictEqual(amendment, [[1, 100, "MANSION"]]);
+  });
+
+  it("updates a purchase amendment if one exists", () => {
+    const c = open();
+
+    const [user] = getOrCreateUser({ email: "person@example.org" });
+    savePurchase({ user, amount: 10, merchant: "HOTEL", timestamp: 1 });
+    amendPurchase({
+      purchaseId: 1,
+      newAmountInCents: 100,
+      newMerchant: "MANSION",
+    });
+
+    // Further amendments shouldn't create any new rows
+    amendPurchase({
+      purchaseId: 1,
+      newAmountInCents: 99,
+      newMerchant: "7eleven",
+    });
+    amendPurchase({
+      purchaseId: 1,
+      newAmountInCents: 199,
+      newMerchant: "7eleven",
+    });
+
+    const amendment = c
+      .prepare(
+        `SELECT
+        purchase_id,
+        new_amount_in_cents,
+        new_merchant
+      FROM purchase_amendment`
+      )
+      .raw()
+      .all();
+
+    assert.deepStrictEqual(amendment, [[1, 199, "7eleven"]]);
   });
 });

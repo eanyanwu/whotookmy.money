@@ -16,6 +16,7 @@
       <h1>Summary</h1>
       <p class="o-60 fw6">{{ email }}</p>
     </header>
+    <!-- TOTAL SPEND SECTION -->
     <section class="pa2 ma2 card shadow-2 flex flex-column justify-between h4">
       <p class="chart-caption">Total spend</p>
       <div>
@@ -23,7 +24,11 @@
         <span class="fw6 o-50">in the last {{ period }} days</span>
       </div>
     </section>
+    <!-- DAILY SPEND BAR CHART -->
+    <!-- This section is relative so we can absolutely position the tooltip within it -->
     <section class="pa2 ma2 card shadow-2 relative">
+      <!-- Tooltips. They are all hidden (display: none) by default
+            An on-click javascript handler displays them -->
       {{#purchaseByDate}}
       <section
         data-purchase-date="{{ date }}"
@@ -37,6 +42,7 @@
         {{/purchases}}
       </section>
       {{/purchaseByDate}}
+      <!-- The data is presented as a table. CSS is used to force it to look like a bar chart -->
       <table>
         <caption class="dib chart-caption">
           Daily spend $
