@@ -308,7 +308,9 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
       COALESCE(daily_spend.spend, 0) as spend
     FROM calendar
     LEFT JOIN daily_spend
-    ON calendar.day = daily_spend.day`
+    ON calendar.day = daily_spend.day
+    ORDER BY calendar.day
+    `
     )
     .all({ user_id: user.userId });
 
