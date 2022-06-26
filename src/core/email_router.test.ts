@@ -47,8 +47,11 @@ describe("routeEmail", () => {
     const res = c.prepare(`SELECT subject, body FROM outbound_email`).get();
 
     assert.equal(res.subject, "Welcome!");
-    assert.ok(
-      res.body.includes("https://dev.whotookmy.money/dashboard?id=1&mac=")
+    assert.equal(
+      res.body.includes(
+        "https://dev.whotookmy.money/secure/dashboard?id=1&mac="
+      ),
+      true
     );
   });
 

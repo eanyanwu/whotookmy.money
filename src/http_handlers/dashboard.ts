@@ -3,41 +3,18 @@ import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
 import { centsToDollarString } from "../currency";
-import {
-  dailySpend,
-  getRecentPurchases,
-  lookupUser,
-  NoRowsReturned,
-} from "../data";
+import { dailySpend, getRecentPurchases, type User } from "../data";
 import { WEEKDAYS } from "../datetime";
-import * as log from "../log";
 import type { HttpHandlerResponse } from "./http_handler";
 
-type DashboardHandlerArgs = {
-  userId: number;
-};
-
 /* Render a user's dashboard */
-export const dashboard = async ({
-  userId,
-}: DashboardHandlerArgs): Promise<HttpHandlerResponse> => {
+export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
   const template = await fs.readFile(
     path.join(__dirname, "../templates/dashboard.html"),
     {
       encoding: "utf-8",
     }
   );
-  let user;
-
-  try {
-    user = lookupUser({ id: userId });
-  } catch (err) {
-    if (err instanceof NoRowsReturned) {
-      log.error({ userId }, "user does not exist");
-      return { statusCode: 404 };
-    }
-    throw err;
-  }
 
   // Only display purchases from the past 10 days
   const period = 10;
