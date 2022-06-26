@@ -48,9 +48,7 @@ describe("routeEmail", () => {
 
     assert.equal(res.subject, "Welcome!");
     assert.equal(
-      res.body.includes(
-        "https://dev.whotookmy.money/secure/dashboard?id=1&mac="
-      ),
+      res.body.includes("https://dev.whotookmy.money/login?id=1&mac="),
       true
     );
   });

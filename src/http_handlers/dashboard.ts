@@ -72,6 +72,7 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
 
   const view = {
     email: user.userEmail,
+    userId: user.userId,
     spend: transformedSpend,
     totalSpend: centsToDollarString(totalSpend),
     purchaseByDate: purchaseListByDate,
@@ -81,9 +82,7 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
   const output = Mustache.render(template, view);
   return {
     statusCode: 200,
-    headers: {
-      "Content-Type": "text/html",
-    },
+    headers: { "Content-Type": "text/html" },
     data: output,
   };
 };

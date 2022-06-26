@@ -1,9 +1,12 @@
 import setup_router from "find-my-way";
 import http from "http";
-import { isAuthenticated } from "./authentication";
+import {
+  checkCookieAuthentication,
+  checkURLAuthentication,
+} from "./authentication";
 import type { User } from "./data";
 import type { HttpHandlerResponse } from "./http_handlers";
-import { dashboard, postmark, staticFile } from "./http_handlers";
+import { dashboard, postmark, purchases, staticFile } from "./http_handlers";
 import * as log from "./log";
 import * as server from "./server";
 
@@ -31,11 +34,34 @@ export const createWtmmServer = (
     return postmark({ payload });
   });
 
+  router.on("GET", "/login", async (req, res) => {
+    const [authenticated, mac, user] = checkURLAuthentication(req);
+
+    if (!authenticated || !mac || !user) {
+      return { statusCode: 401 };
+    }
+
+    return {
+      statusCode: 302,
+      headers: {
+        Location: "/dashboard",
+        "Set-Cookie": [`id=${user.userId}`, `mac=${mac}`],
+      },
+    };
+  });
   router.on(
     "GET",
-    "/secure/dashboard",
-    async function (this: RouteContext, req, _res, _params) {
+    "/dashboard",
+    async function (this: RouteContext, req, _res) {
       return dashboard(this.user!);
+    }
+  );
+
+  router.on(
+    "GET",
+    "/purchases",
+    async function (this: RouteContext, req, _res, _params) {
+      return purchases(this.user!);
     }
   );
 
@@ -50,12 +76,12 @@ export const createWtmmServer = (
     res: http.ServerResponse
   ) => {
     log.timer("request-duration");
-    const authenticatedRoutes = ["/secure"];
+    const anonymousRoutes = ["/postmark_webhook", "/login"];
 
     let context: RouteContext = { user: undefined };
 
-    if (authenticatedRoutes.some((r) => req.url!.includes(r))) {
-      const [authenticated, user] = isAuthenticated(req);
+    if (!anonymousRoutes.some((r) => req.url!.includes(r))) {
+      const [authenticated, user] = checkCookieAuthentication(req);
       if (!authenticated) {
         log.info(`${req.method}`, `${req.url}`, `${401}`);
         res.writeHead(401);
