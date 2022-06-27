@@ -76,7 +76,7 @@ export const lookupPurchase = ({ id }: { id: number }): Purchase => {
         p.user_id as userId,
         p.amount_in_cents as amountInCents,
         p.merchant as merchant,
-        p.timestamp + user.tz_offset as timestamp,
+        p.timestamp as timestamp,
         p.is_amended as isAmended,
         p.created_at as createdAt
       FROM amended_purchase as p
@@ -288,9 +288,8 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
     )
     .get({ user_id: user.userId }).offset;
 
-  const offsetFormatter = Intl.NumberFormat("en-US", { signDisplay: "always" });
-
-  const offsetStr = offsetFormatter.format(offset).replace(",", "");
+  const f = Intl.NumberFormat("en-US", { signDisplay: "always" });
+  const offsetStr = f.format(offset).replace(",", "");
 
   // Calculates the spend per day for the given user, The `calendar` table is a
   // recursive CTE allowing me to geneerate a timeseries starting at the user's
