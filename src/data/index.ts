@@ -346,7 +346,7 @@ export const getRecentPurchases = (user: User, days: number): Purchase[] => {
         p.user_id as userId,
         p.amount_in_cents as amountInCents,
         p.merchant,
-        p.timestamp + user.tz_offset as timestamp,
+        p.timestamp as timestamp,
         p.is_amended as isAmended,
         p.created_at as createdAt
       FROM amended_purchase as p
