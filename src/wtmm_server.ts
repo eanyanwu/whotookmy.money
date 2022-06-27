@@ -45,7 +45,7 @@ export const createWtmmServer = (
       statusCode: 302,
       headers: {
         Location: "/dashboard",
-        "Set-Cookie": [`id=${user.userId}`, `mac=${mac}`],
+        "Set-Cookie": [`id=${user.userId};Max-Age=2147483647`, `mac=${mac};Max-Age=2147483647`],
       },
     };
   });
