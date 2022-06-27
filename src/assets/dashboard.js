@@ -1,38 +1,30 @@
-const containers = document.querySelectorAll(".bar-container");
+/* selecting the currently active bar:
+ *
+ * on-load, checks the url hash. If there is a hash, use it to locate the bar
+ * to select.
+ *
+ * then, attach an event handler to every bar so we can detect when they are
+ * clicked on.
+ * */
 
-for (const container of containers) {
-  container.addEventListener("click", handleBarContainerClick);
+const hash = window.location.hash;
+const selected = document.querySelector(`a[href='${hash}']`);
+if (selected) {
+  selected.classList.add("bar-selected");
 }
 
-/* Display itemized transactions on click */
-function handleBarContainerClick(event) {
-  const purchaseDate = this.dataset.purchaseDate;
-  // Find the detail section with this
-  const purchaseDetail = document.querySelector(
-    `.purchase-detail[data-purchase-date='${purchaseDate}']`
-  );
+const bars = document.querySelectorAll("a.bar");
 
-  // Hide any previously shown detail section
-  for (const el of document.querySelectorAll(".purchase-detail")) {
-    if (el !== purchaseDetail) {
-      el.classList.add("dn");
-    }
-  }
+for (const bar of bars) {
+  bar.addEventListener("click", handleBarClick);
+}
 
-  // Deselect any previously selected bars
-  for (const el of document.querySelectorAll(".bar-container-selected")) {
+function handleBarClick(event) {
+  for (const el of document.querySelectorAll(".bar-selected")) {
     if (el !== this) {
-      el.classList.remove("bar-container-selected");
+      el.classList.remove("bar-selected");
     }
   }
 
-  // `purchaseDetail` might be null when there are no purchaess for that date
-  if (!purchaseDetail) {
-    return;
-  }
-
-  // Toggle the bar selection
-  this.classList.toggle("bar-container-selected");
-  // Toggle the purchase detail visibility
-  purchaseDetail.classList.toggle("dn");
+  this.classList.toggle("bar-selected");
 }

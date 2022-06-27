@@ -141,8 +141,9 @@ const sendWelcomeEmail = (user: User) => {
   const qs = `id=${user.userId}&mac=${encodeURIComponent(
     generateMac(user.userId.toString())
   )}`;
-  const dashboard = `https://${domain}/dashboard?${qs}`;
+  const dashboard = `https://${domain}/login?${qs}`;
   const welcome = `
+
   ~~~
   Here is the link to your dashboard:
   ${dashboard}

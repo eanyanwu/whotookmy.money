@@ -95,18 +95,19 @@ describe("lookupUser", () => {
 describe("savePurchase", () => {
   it("creates a new purchase for user", () => {
     const c = open();
+    const now = Math.floor(Date.now() / 1000);
     const [user] = getOrCreateUser({ email: "person@example.org" });
     const purchase = savePurchase({
       user,
       amount: 1000,
       merchant: "AIRBNB",
-      timestamp: 1,
+      timestamp: now,
     });
 
     assert.equal(purchase.userId, 1);
     assert.equal(purchase.amountInCents, 1000);
     assert.equal(purchase.merchant, "AIRBNB");
-    assert.equal(purchase.timestamp, 1);
+    assert.equal(purchase.timestamp, now);
     assert.equal(purchase.isAmended, 0);
     assert.ok(purchase.createdAt);
   });
@@ -241,8 +242,13 @@ describe("markEmailSent & pollUnsentEmail", () => {
 describe("dailySpend", () => {
   it("with no purchases", () => {
     const [user] = getOrCreateUser({ email: "person@example.org" });
-    const spend = dailySpend(user, 10);
-    assert.deepStrictEqual(spend, []);
+    const spend = dailySpend(user, 3);
+
+    assert.equal(spend.length, 4);
+    assert.equal(spend[0].spend, 0);
+    assert.equal(spend[1].spend, 0);
+    assert.equal(spend[2].spend, 0);
+    assert.equal(spend[3].spend, 0);
   });
   it("with purchases", () => {
     const c = open();
@@ -339,7 +345,7 @@ describe("amendPurchase", () => {
       amount: 10,
       merchant: "HOTEL",
       // timestamp is in seconds
-      timestamp: Date.now() / 1000,
+      timestamp: Math.floor(Date.now() / 1000),
     });
     amendPurchase({
       purchaseId: 1,

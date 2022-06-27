@@ -1,16 +1,11 @@
 import type { Buffer as BufferType } from "buffer";
 import { Buffer } from "buffer";
-import setup_router from "find-my-way";
-import type { IncomingMessage } from "http";
 import http from "http";
 import type { Socket } from "net";
 import net from "net";
-import { verifyMac } from "./crypto";
-import type { HttpHandlerResponse } from "./http_handlers";
-import { dashboard, postmark, staticFile } from "./http_handlers";
-import { elapsed, info, timer } from "./log";
+import * as log from "./log";
 
-type CreateServerOptions = {
+export type CreateServerOptions = {
   host: string;
   port: number;
   onListen: (err?: Error, server?: http.Server) => void;
@@ -25,7 +20,7 @@ export const createServer = (opts: CreateServerOptions) => {
   server.on("listening", () => {
     // save coercion as listening on an IP port always returns AddressInfo
     const { port, address } = server.address() as net.AddressInfo;
-    info(`server listening on: ${address}:${port}`);
+    log.info(`server listening on: ${address}:${port}`);
     opts.onListen(undefined, server);
   });
   server.on("error", (err) => {
@@ -37,7 +32,7 @@ export const createServer = (opts: CreateServerOptions) => {
   server.listen(opts.port, opts.host);
 };
 
-type CreateServerAsyncOptions = Omit<CreateServerOptions, "onListen">;
+export type CreateServerAsyncOptions = Omit<CreateServerOptions, "onListen">;
 // Promisified version of `setupServer`. Promise resolves with the server
 // instance once the server is up and listening
 export const createServerAsync = (
@@ -62,16 +57,9 @@ export const createServerAsync = (
   });
 };
 
-const router = setup_router({
-  ignoreTrailingSlash: true,
-  defaultRoute: (_req, _res) => {
-    return Promise.resolve({ statusCode: 404 });
-  },
-});
-
 /* Reads and returns the request payload as a `Buffer` */
 export const readRequestPayload = (
-  req: IncomingMessage
+  req: http.IncomingMessage
 ): Promise<BufferType> => {
   return new Promise((resolve, reject) => {
     const chunks: BufferType[] = [];
@@ -89,78 +77,4 @@ export const readRequestPayload = (
     req.on("end", onEnd);
     req.on("error", onError);
   });
-};
-
-type CreateWtmmServerOptions = Omit<CreateServerAsyncOptions, "onRequest">;
-/* Sets up the wtmm server to listen for postmark webhooks and dashboard requests */
-export const createWtmmServer = (
-  opts: CreateWtmmServerOptions
-): Promise<http.Server> => {
-  router.on("POST", "/postmark_webhook", async (req, _res, _params) => {
-    let payload = await readRequestPayload(req);
-    return postmark({ payload });
-  });
-
-  router.on("GET", "/dashboard", async (req, _res, _params) => {
-    let url = req.url!;
-    let qsIdx = url.indexOf("?");
-
-    if (qsIdx === -1) {
-      return { statusCode: 404 };
-    }
-
-    let qs = new URLSearchParams(url.slice(qsIdx));
-    let userIdStr = qs.get("id");
-    let mac = qs.get("mac");
-
-    if (!userIdStr || !mac) {
-      return { statusCode: 404 };
-    }
-
-    let userId = Number.parseInt(userIdStr);
-    if (Number.isNaN(userId)) {
-      return { statusCode: 404 };
-    }
-
-    /* Rationale: Message Authentication Codes are used to verify that (a) a
-     * message wasn't tampered with and (b) that it came from the person you
-     * expected it to (i.e. it's valid) I don't think I need to actually secure my
-     * dashboard endpoint, but I also don't want someone to be able to enumerate
-     * through dashboards by userID, or by trying different user emails. Creating a
-     * MAC for the email and including it in the dashboard link proves that it was I
-     * who generated the link*/
-    if (!verifyMac(userIdStr, mac)) {
-      return { statusCode: 404 };
-    }
-
-    return dashboard({ userId });
-  });
-
-  /* Serve static assets */
-  router.on("GET", "/public/*", (req, _res) => {
-    const requestedURL = req.url!.slice(7);
-    return staticFile({ url: requestedURL });
-  });
-
-  const onRequest = async (
-    req: http.IncomingMessage,
-    res: http.ServerResponse
-  ) => {
-    timer("request-duration");
-    const response: HttpHandlerResponse = await router.lookup(req, res);
-
-    info(
-      `${req.method}`,
-      `${req.url}`,
-      `${response.statusCode}`,
-      `${response.data ? response.data.length : 0}`
-    );
-
-    res.writeHead(response.statusCode, { ...response.headers });
-    res.end(response.data);
-
-    elapsed("request-duration");
-  };
-
-  return createServerAsync({ ...opts, onRequest });
 };

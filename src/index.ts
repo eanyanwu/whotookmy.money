@@ -1,7 +1,7 @@
 import config from "./config";
 import { open_and_init } from "./db";
 import { createOutboxMonitor } from "./outbox";
-import { createWtmmServer } from "./server";
+import { createWtmmServer } from "./wtmm_server";
 
 // Migrate the database if needed
 open_and_init();

@@ -45,13 +45,33 @@ CREATE TABLE user_report_outbound_email (
 
 const MIGRATIONS: M[] = [
   M.up(
-    `CREATE TABLE purchase_amendment (
-            purchase_amendment_id INTEGER PRIMARY KEY,
-            purchase_id INTEGER UNIQUE NOT NULL REFERENCES purchase(purchase_id) ON DELETE CASCADE,
-            new_amount_in_cents INTEGER NOT NULL,
-            new_merchant TEXT NOT NULL,
-            created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
-        );`
+    `
+    CREATE TABLE purchase_amendment (
+      purchase_amendment_id INTEGER PRIMARY KEY,
+      purchase_id INTEGER UNIQUE NOT NULL REFERENCES purchase(purchase_id) ON DELETE CASCADE,
+      new_amount_in_cents INTEGER NOT NULL,
+      new_merchant TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s'))
+    );`
+  ),
+  M.up(
+    `
+    CREATE VIEW amended_purchase AS
+    WITH amend as (
+      SELECT purchase_id, new_amount_in_cents, new_merchant
+      FROM purchase_amendment
+    )
+    SELECT
+      p.purchase_id as purchase_id,
+      p.user_id as user_id,
+      COALESCE(a.new_amount_in_cents, p.amount_in_cents) as amount_in_cents,
+      COALESCE(a.new_merchant, p.merchant) as merchant,
+      p.timestamp as timestamp,
+      a.purchase_id IS NOT NULL as is_amended,
+      p.created_at as created_at 
+    FROM purchase as p
+    LEFT JOIN amend as a
+    ON a.purchase_id = p.purchase_id`
   ),
 ];
 
