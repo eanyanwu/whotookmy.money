@@ -38,9 +38,8 @@
     <section id="{{ date }}" class="purchase-detail">
       {{#purchases}}
       <form>
-        <input spellcheck="false" type="text" value="{{ merchant }}" />
-        <input type="number" step="0.01" value="{{ amount }}" />
-        <input type="submit" value="save" />
+        <input disabled spellcheck="false" type="text" value="{{ merchant }}" />
+        <input disabled type="number" step="0.01" value="{{ amount }}" />
       </form>
       {{/purchases}}
     </section>
