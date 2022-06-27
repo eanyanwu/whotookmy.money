@@ -9,7 +9,8 @@ open_and_init();
 // Start the server
 const PORT = config.get("server").port;
 const server = createWtmmServer({
-  host: "127.0.0.1",
+  //host: "127.0.0.1",
+  host: "192.168.1.167",
   port: PORT,
 });
 

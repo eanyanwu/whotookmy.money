@@ -27,6 +27,7 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
 
   const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
+  console.log({ spend });
   const transformedSpend = spend.map(({ day, spend }) => {
     return {
       date: day,
@@ -37,7 +38,7 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
     };
   });
 
-  type PurchaseView = { merchant: string; amount: string };
+  type PurchaseView = { merchant: string; amount: string, id: number };
   let purchaseByDate = purchases.reduce(
     (acc: Record<string, PurchaseView[]>, curr) => {
       const date = formatISO(fromUnixTime(curr.timestamp), {
@@ -46,12 +47,14 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
       if (!acc[date]) {
         acc[date] = [
           {
+            id: curr.purchaseId,
             merchant: curr.merchant,
             amount: centsToDollarString(curr.amountInCents),
           },
         ];
       } else {
         acc[date].push({
+          id: curr.purchaseId,
           merchant: curr.merchant,
           amount: centsToDollarString(curr.amountInCents),
         });

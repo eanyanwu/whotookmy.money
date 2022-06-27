@@ -1,0 +1,107 @@
+:root {
+  --black: #3c3c3c;
+  --white: #fdf7f1;
+  --pink: #ec4067;
+}
+
+
+/* 1 column layout */
+.content {
+  /* layout */
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+
+  /* typography */
+  font-family: georgia, serif;
+
+  /* colors */
+  background-color: var(--white);
+  color: var(--black);
+}
+
+/* lobotomized owl selectors for spacing */
+section + section {
+  margin-top: 1.5rem;
+}
+
+p + p {
+  margin-top: 1rem;
+}
+
+/* font-size scale */
+.f1 { font-size: 3rem; }
+.f2 { font-size: 2.25rem; }
+.f3 { font-size: 1.5rem; }
+.f4 { font-size: 1.25rem; }
+.f5 { font-size: 1rem; }
+.f6 { font-size: .875rem; }
+.f7 { font-size: .75rem; } 
+
+/* input */
+input, textarea {
+  padding: 2px 5px;
+  box-shadow: none;
+  border-radius: 0;
+  border: 0;
+  outline: 0;
+
+  /* make inputs blend into the page */
+  color: inherit;
+  background-color: inherit;
+}
+
+input:focus, textarea:focus {
+  border-bottom: 1px dashed var(--black);
+}
+
+/* bar chart styling */
+
+.bar-chart {
+  /* give the chart an explicit height. */
+  height: 15rem;
+
+  /* positions the list items on a line */
+  display: flex;
+  flex-direction: row;
+}
+
+.bar-chart > div {
+  /* list items should start with the same width, and grow/shring to remaining space */
+  flex: 1;
+  width: 0;
+  /* list items are laid out from the bottom up */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.bar-chart .bar-chart-data-label {
+  /* The label on top of the bar should be centered and small */
+  font-size: 0.7rem;
+  text-align: center;
+  margin-bottom: 0.4rem;
+}
+
+.bar-chart .bar-chart-xaxis-label {
+  /* The x-axis label should be centered and small */
+  font-size: 0.7rem;
+  text-align: center;
+  padding-top: 0.4rem;
+  /* Draw the x-axis */
+  border-top: 1px solid var(--black);
+}
+
+.bar {
+  display: block;
+  background-color: var(--black);
+  /* Give the bars some space */
+  margin: 0 5px;
+}
+
+.bar-selected {
+  background-color: var(--pink);
+}
+

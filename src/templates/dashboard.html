@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/public/reset.css" />
+    <link rel="stylesheet" href="/public/global.css" />
     <link rel="stylesheet" href="/public/dashboard.css" />
     <link
       rel="stylesheet"
@@ -10,70 +12,37 @@
     />
     <title>wtmm dashboard</title>
   </head>
-  <body>
-    <header class="pa2 ma2">
-      <h1>Summary</h1>
-      <p class="o-60 fw6">{{ email }}</p>
-    </header>
-    <section class="pa2 ma2">
-      <a class="nav-link" href="/purchases">Modify past purchases</a>
-    </section>
-    <!-- TOTAL SPEND SECTION -->
-    <section class="pa2 ma2 card shadow-2 flex flex-column justify-between h4">
-      <p class="chart-caption">Total spend</p>
-      <div>
-        <span class="b f2">${{ totalSpend }}</span>
-        <span class="fw6 o-50">in the last {{ period }} days</span>
-      </div>
+  <body class="content">
+    <section>
+      <p class="f5">You spent</p>
+      <p class="f1">${{ totalSpend }}</p>
+      <p class="f5">in the last {{ period }} days</p>
     </section>
     <!-- DAILY SPEND BAR CHART -->
-    <!-- This section is relative so we can absolutely position the tooltip within it -->
-    <section class="pa2 ma2 card shadow-2 relative">
-      <!-- Tooltips. They are all hidden (display: none) by default
-            An on-click javascript handler displays them -->
-      {{#purchaseByDate}}
-      <section
-        data-purchase-date="{{ date }}"
-        class="pa1 ma1 card dn ba bw1 b--light-silver purchase-detail absolute top-2 left-0 right-1"
-      >
-        {{#purchases}}
-        <div class="mv2 flex justify-between">
-          <span class="mh3 f6 fw6 o-80">{{ merchant }}</span>
-          <span class="f6">${{ amount }}</span>
+    <section>
+      <div class="bar-chart">
+        {{#spend}}
+        <div>
+            <div class="bar-chart-data-label">{{ spendInDollars }}</div>
+            <a href="#{{ date }}" class="bar" style="height:{{ percentageOfMaxSpend }}%"></a>
+            <div class="bar-chart-xaxis-label">{{ dayOfWeek }}<br/>{{ day }}</div>
         </div>
-        {{/purchases}}
-      </section>
-      {{/purchaseByDate}}
-      <!-- The data is presented as a table. CSS is used to force it to look like a bar chart -->
-      <table>
-        <caption class="dib chart-caption">
-          Daily spend $
-        </caption>
-        <thead class="h3">
-          <tr>
-            <th class="accessible-hide" scope="row">Date</th>
-            <th class="accessible-hide" scope="row">Spend</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#spend}}
-          <tr data-purchase-date="{{ date }}" class="bar-container">
-            <td class="bar-x-axis tc o-70">
-              <div>{{ dayOfWeek }}</div>
-              <div>{{ day }}</div>
-            </td>
-            <td class="bar">
-              <div class="bar-label fw6 o-50">{{ spendInDollars }}</div>
-              <div
-                class="bar-fill"
-                style="height: {{ percentageOfMaxSpend }}%"
-              ></div>
-            </td>
-          </tr>
-          {{/spend}}
-        </tbody>
-      </table>
+        {{/spend}}
+      </div>
     </section>
+    <!-- Tooltips. They are all hidden (display: none) by default
+          An on-click javascript handler displays them -->
+    {{#purchaseByDate}}
+    <section id="{{ date }}" class="purchase-detail">
+      {{#purchases}}
+      <form>
+          <input spellcheck="false" type="text" value="{{ merchant }}" />
+          <input type="number" step="0.01" value="{{ amount }}" />
+          <input type="submit" value="save" />
+      </form>
+      {{/purchases}}
+    </section>
+    {{/purchaseByDate}}
     <script type="module" src="/public/dashboard.js"></script>
   </body>
 </html>

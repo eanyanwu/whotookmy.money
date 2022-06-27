@@ -8,110 +8,42 @@
   --gray: #7c7c7c;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+/* purchase details are originally hidden */
+.purchase-detail {
+  display: none;
 }
 
-body {
-  font-family: Helvetica, Arial, sans-serif;
-  background-color: var(--light-gray);
-  color: #222;
+/* when a bar is clicked, display the matching section */
+.purchase-detail:target {
+  display: block; 
 }
 
-table {
-  display: block;
+
+/* when a bar is selected, highlight it */
+input[name="bar"]:checked ~ .bar {
+  background-color: var(--pink);
 }
 
-section {
-  padding: 0.5em 0.5em;
-}
+/* purchase modification forms */
 
-.chart-caption {
-  color: var(--blue);
-  font-weight: bold;
-}
-
-.nav-link {
-  font-weight: bold;
-  display: inline-block;
-  background-color: var(--blue);
-  color: #fff;
-  text-decoration: none;
-  border: 1px solid black;
-  padding: 0.3rem 0.3rem;
-}
-
-tbody {
-  /* Put all the rows on a horizontal line */
+/* each purchase gets a row */
+.purchase-detail > form { 
   display: flex;
   flex-direction: row;
-  /* Set the dimensions of the chart */
-  height: 12rem;
-  width: 100%;
-  overflow: scroll;
 }
 
-/* For each row, display the date cell on the bottom, data on the top */
-.bar-container {
-  display: flex;
-  flex-direction: column-reverse;
-  /* Let bars grow to fill the available space */
+/* The merchant name input should take up the most space */
+.purchase-detail input[type="text"] {
+  width: 0;
+  flex: 5 1 0;
+}
+
+.purchase-detail input[type="number"] {
+  width: 0;
+  flex: 2 1 0;
+}
+
+.purchase-detail input[type="submit"] {
+  width: 0;
   flex: 1;
-}
-
-.bar-container-selected {
-  background-color: var(--light-gray);
-}
-
-.bar {
-  color: white;
-
-  /* The bar should fill any space not taken by the x-axis item */
-  flex: 1;
-
-  /* The contents of the bar also need to be laid out */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-}
-
-.bar-x-axis {
-  font-size: 0.7rem;
-  /* Make it look like an x axis */
-  border-top: 1px solid var(--gray);
-}
-
-.bar-fill {
-  /* Give bars a rounded look */
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0px -1px 1px var(--light-gray);
-  background-color: var(--pink);
-  margin: 0 3px;
-}
-
-.bar-label {
-  color: #000;
-  opacity: 0.7;
-  font-size: 0.75rem;
-  text-align: center;
-}
-
-.card {
-  background-color: #fff;
-  border-radius: 7px;
-}
-
-.purchase-detail {
-  max-height: 6rem;
-  overflow: scroll;
-  z-index: 10;
-}
-
-/* UTILITY CLASSES */
-
-/* For when you want to hide something visually, but still keep it accessibel
- * to screen readers */
-.accessible-hide {
-  opacity: 0;
 }
