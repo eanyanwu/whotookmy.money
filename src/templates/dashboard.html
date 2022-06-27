@@ -6,10 +6,6 @@
     <link rel="stylesheet" href="/public/reset.css" />
     <link rel="stylesheet" href="/public/global.css" />
     <link rel="stylesheet" href="/public/dashboard.css" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css"
-    />
     <title>wtmm dashboard</title>
   </head>
   <body class="content">
@@ -23,9 +19,15 @@
       <div class="bar-chart">
         {{#spend}}
         <div>
-            <div class="bar-chart-data-label">{{ spendInDollars }}</div>
-            <a href="#{{ date }}" class="bar" style="height:{{ percentageOfMaxSpend }}%"></a>
-            <div class="bar-chart-xaxis-label">{{ dayOfWeek }}<br/>{{ day }}</div>
+          <div class="bar-chart-data-label">{{ spendInDollars }}</div>
+          <a
+            href="#{{ date }}"
+            class="bar"
+            style="height:{{ percentageOfMaxSpend }}%"
+          ></a>
+          <div class="bar-chart-xaxis-label">
+            {{ dayOfWeek }}<br />{{ day }}
+          </div>
         </div>
         {{/spend}}
       </div>
@@ -36,9 +38,9 @@
     <section id="{{ date }}" class="purchase-detail">
       {{#purchases}}
       <form>
-          <input spellcheck="false" type="text" value="{{ merchant }}" />
-          <input type="number" step="0.01" value="{{ amount }}" />
-          <input type="submit" value="save" />
+        <input spellcheck="false" type="text" value="{{ merchant }}" />
+        <input type="number" step="0.01" value="{{ amount }}" />
+        <input type="submit" value="save" />
       </form>
       {{/purchases}}
     </section>

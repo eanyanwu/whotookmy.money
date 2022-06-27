@@ -15,9 +15,8 @@
 
 /* when a bar is clicked, display the matching section */
 .purchase-detail:target {
-  display: block; 
+  display: block;
 }
-
 
 /* when a bar is selected, highlight it */
 input[name="bar"]:checked ~ .bar {
@@ -27,7 +26,7 @@ input[name="bar"]:checked ~ .bar {
 /* purchase modification forms */
 
 /* each purchase gets a row */
-.purchase-detail > form { 
+.purchase-detail > form {
   display: flex;
   flex-direction: row;
 }

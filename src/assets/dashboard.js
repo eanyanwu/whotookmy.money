@@ -1,4 +1,4 @@
-/* selecting the currently active bar: 
+/* selecting the currently active bar:
  *
  * on-load, checks the url hash. If there is a hash, use it to locate the bar
  * to select.
@@ -8,7 +8,7 @@
  * */
 
 const hash = window.location.hash;
-const selected = document.querySelector(`a[href='${hash}']`)
+const selected = document.querySelector(`a[href='${hash}']`);
 if (selected) {
   selected.classList.add("bar-selected");
 }

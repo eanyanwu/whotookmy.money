@@ -279,6 +279,19 @@ export type DailySpend = { day: string; spend: number };
 export const dailySpend = (user: User, period: number): DailySpend[] => {
   const c = open();
 
+  const offset: number = c
+    .prepare(
+      `
+    SELECT tz_offset as offset
+    FROM user
+    WHERE user_id = :user_id`
+    )
+    .get({ user_id: user.userId }).offset;
+
+  const offsetFormatter = Intl.NumberFormat("en-US", { signDisplay: "always" });
+
+  const offsetStr = offsetFormatter.format(offset).replace(",", "");
+
   // Calculates the spend per day for the given user, The `calendar` table is a
   // recursive CTE allowing me to geneerate a timeseries starting at the user's
   // first purchase and ending today
@@ -286,14 +299,14 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
     .prepare(
       `
       WITH start as (
-        SELECT strftime('%s', 'now', '-${period} days') + tz_offset as timestamp
+        SELECT strftime('%s', 'now', '-${period} days') as timestamp
         FROM user
         WHERE user_id = :user_id
       ),
       daily_spend as (
         SELECT
           p.user_id,
-          date(timestamp + u.tz_offset, 'unixepoch') as day,
+          date(timestamp, 'unixepoch', '${offsetStr} seconds')as day,
           SUM(p.amount_in_cents) as spend
         FROM amended_purchase as p
         INNER JOIN user as u
@@ -302,7 +315,7 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
         HAVING p.user_id = :user_id
       ),
       calendar as (
-        SELECT date(timestamp, 'unixepoch') as day
+        SELECT date(timestamp, 'unixepoch', '${offsetStr} seconds') as day
         FROM start 
         UNION ALL
         SELECT date(day, '+1 day')

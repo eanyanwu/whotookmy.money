@@ -38,7 +38,7 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
     };
   });
 
-  type PurchaseView = { merchant: string; amount: string, id: number };
+  type PurchaseView = { merchant: string; amount: string; id: number };
   let purchaseByDate = purchases.reduce(
     (acc: Record<string, PurchaseView[]>, curr) => {
       const date = formatISO(fromUnixTime(curr.timestamp), {
