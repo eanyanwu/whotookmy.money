@@ -345,8 +345,8 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
   // TODO: validate period
   const zone = FixedOffsetZone.instance(user.tzOffset / 60);
 
-  // `now` needs to be zone-aware, so get the correct unix timestamp corresponding
-  // to the start of the day, in that zone.
+  // `now` needs to be zone-aware to get the correct unix timestamp corresponding
+  // to the start of the day, in the user's zone.
   const now = DateTime.utc().setZone(zone);
   const periodStart = now.plus({ days: -1 * period }).startOf("day");
 
