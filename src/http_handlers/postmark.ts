@@ -1,6 +1,6 @@
 import type { InboundEmail } from "../core";
 import { routeEmail } from "../core";
-import { parseRfc2822, toUnixTimestamp } from "../datetime";
+import { parseRfc2822 } from "../datetime";
 import { error } from "../log";
 import type { HttpHandlerResponse } from "./http_handler";
 
@@ -106,8 +106,7 @@ const toInboundEmail = (e: InboundPostmarkEmail): InboundEmail => {
     from = e["FromFull"][0]["Email"];
   }
 
-  const [date, offset] = parseRfc2822(e["Date"]);
-  const timestamp = toUnixTimestamp(date);
+  const [timestamp, offset] = parseRfc2822(e["Date"]);
 
   // Use the html body if available. If not default to text body The idea with
   // email was that there would always be a text/plain subpart, and optionally

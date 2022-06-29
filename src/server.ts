@@ -1,5 +1,6 @@
 import type { Buffer as BufferType } from "buffer";
 import { Buffer } from "buffer";
+import busboy from "busboy";
 import http from "http";
 import type { Socket } from "net";
 import net from "net";
@@ -57,6 +58,33 @@ export const createServerAsync = (
   });
 };
 
+/* Read a multiplart/form-data payload from the request */
+export const readFormData = (
+  req: http.IncomingMessage
+): Promise<Record<string, string> | undefined> => {
+  return new Promise((resolve, reject) => {
+    let form: Record<string, string> | undefined = undefined;
+
+    const bb = busboy({ headers: req.headers });
+
+    bb.on("field", (name, value) => {
+      if (!form) {
+        form = {};
+      }
+      form[name] = value;
+    });
+
+    bb.on("error", (err) => {
+      reject(err);
+    });
+
+    bb.on("close", () => {
+      resolve(form);
+    });
+
+    req.pipe(bb);
+  });
+};
 /* Reads and returns the request payload as a `Buffer` */
 export const readRequestPayload = (
   req: http.IncomingMessage

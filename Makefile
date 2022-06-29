@@ -1,15 +1,6 @@
-run:
-	PORT=8080 npm run start
-
-check:
-	npm run check
-
 test:
 	npm run test
 	npx prettier --list-different src
-
-fmt:
-	npx prettier --write src
 
 build:
 	# Install all dependencies. devDependencies are needed (e.g. typescript)

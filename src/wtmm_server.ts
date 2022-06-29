@@ -6,7 +6,7 @@ import {
 } from "./authentication";
 import type { User } from "./data";
 import type { HttpHandlerResponse } from "./http_handlers";
-import { dashboard, postmark, purchases, staticFile } from "./http_handlers";
+import { dashboard, postmark, staticFile } from "./http_handlers";
 import * as log from "./log";
 import * as server from "./server";
 
@@ -52,19 +52,20 @@ export const createWtmmServer = (
       },
     };
   });
-  router.on(
-    "GET",
-    "/dashboard",
-    async function (this: RouteContext, req, _res) {
-      return dashboard(this.user!);
-    }
-  );
 
   router.on(
-    "GET",
-    "/purchases",
-    async function (this: RouteContext, req, _res, _params) {
-      return purchases(this.user!);
+    ["GET", "POST"],
+    "/dashboard",
+    async function (this: RouteContext, req, _res) {
+      let form = undefined;
+      if (req.method === "POST") {
+        try {
+          form = await server.readFormData(req);
+        } catch (err) {
+          return { statusCode: 400 };
+        }
+      }
+      return dashboard({ user: this.user!, form });
     }
   );
 
@@ -78,7 +79,6 @@ export const createWtmmServer = (
     req: http.IncomingMessage,
     res: http.ServerResponse
   ) => {
-    log.timer("request-duration");
     const anonymousRoutes = ["/postmark_webhook", "/login"];
 
     let context: RouteContext = { user: undefined };
@@ -110,8 +110,6 @@ export const createWtmmServer = (
 
     res.writeHead(response.statusCode, { ...response.headers });
     res.end(response.data);
-
-    log.elapsed("request-duration");
   };
 
   return server.createServerAsync({ ...opts, onRequest });

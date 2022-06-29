@@ -15,7 +15,8 @@
 
 /* when a bar is clicked, display the matching section */
 .purchase-detail:target {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 /* when a bar is selected, highlight it */
@@ -26,23 +27,27 @@ input[name="bar"]:checked ~ .bar {
 /* purchase modification forms */
 
 /* each purchase gets a row */
-.purchase-detail > form {
+.purchase-detail form {
   display: flex;
   flex-direction: row;
+  margin-bottom: 7px;
 }
 
 /* The merchant name input should take up the most space */
 .purchase-detail input[type="text"] {
-  width: 0;
-  flex: 5 1 0;
+  width: 60%;
 }
 
 .purchase-detail input[type="number"] {
-  width: 0;
-  flex: 2 1 0;
+  width: 30%;
 }
 
-.purchase-detail input[type="submit"] {
-  width: 0;
-  flex: 1;
+.form-submit {
+  width: 15%
 }
+
+.form-submit[value="undo"] {
+  color: var(--pink);
+  border: 1px solid var(--pink);
+}
+
