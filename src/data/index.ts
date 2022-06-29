@@ -1,3 +1,4 @@
+import { DateTime, FixedOffsetZone } from "luxon";
 import { open } from "../db";
 
 export class EmailRateLimit extends Error {
@@ -9,6 +10,12 @@ export class EmailRateLimit extends Error {
 export class NoRowsReturned extends Error {
   constructor() {
     super("query returned no rows");
+  }
+}
+
+export class InvalidArgs extends Error {
+  constructor(...rest: unknown[]) {
+    super(`method was called with invalid arguments: ${rest}`);
   }
 }
 
@@ -274,66 +281,32 @@ export const markEmailSent = (e: OutboundEmail) => {
   ).run(e.outboundEmailId);
 };
 
-/* Returns the user's daily spend over the period */
-export type DailySpend = { day: string; spend: number };
-export const dailySpend = (user: User, period: number): DailySpend[] => {
-  const c = open();
+type CreateRangeIterArgs = { start: number; end: number; step: number };
+/* Create a simple range iterator for a sequence from `start`(inclusive) to `end` (exclusive)
+ * spaced `steps` apart. */
+export function* makeRangeIterator({
+  start,
+  end,
+  step,
+}: CreateRangeIterArgs): IterableIterator<number> {
+  // The following setups are invalid
+  // Step === 0
+  // Start is greater than end, but the step is positive
+  // Start is less than end, but the step is negative
+  if (step === 0 || (start > end && step > 0) || (start < end && step < 0)) {
+    throw new InvalidArgs(start, end, step);
+  }
 
-  const offset: number = c
-    .prepare(
-      `
-    SELECT tz_offset as offset
-    FROM user
-    WHERE user_id = :user_id`
-    )
-    .get({ user_id: user.userId }).offset;
+  let iterationCount = 0;
 
-  const f = Intl.NumberFormat("en-US", { signDisplay: "always" });
-  const offsetStr = f.format(offset).replace(",", "");
+  // the comparison depends on if start > end;
+  for (let i = start; start < end ? i < end : i > end; i += step) {
+    iterationCount++;
+    yield i;
+  }
 
-  // Calculates the spend per day for the given user, The `calendar` table is a
-  // recursive CTE allowing me to geneerate a timeseries starting at the user's
-  // first purchase and ending today
-  const spend = c
-    .prepare(
-      `
-      WITH start as (
-        SELECT strftime('%s', 'now', '-${period} days') as timestamp
-        FROM user
-        WHERE user_id = :user_id
-      ),
-      daily_spend as (
-        SELECT
-          p.user_id,
-          date(timestamp, 'unixepoch', '${offsetStr} seconds')as day,
-          SUM(p.amount_in_cents) as spend
-        FROM amended_purchase as p
-        INNER JOIN user as u
-        ON u.user_id = p.user_id
-        GROUP BY p.user_id, day
-        HAVING p.user_id = :user_id
-      ),
-      calendar as (
-        SELECT date(timestamp, 'unixepoch', '${offsetStr} seconds') as day
-        FROM start 
-        UNION ALL
-        SELECT date(day, '+1 day')
-        FROM calendar
-        WHERE day < date()
-      )
-      SELECT
-        calendar.day as day,
-        COALESCE(daily_spend.spend, 0) as spend
-      FROM calendar
-      LEFT JOIN daily_spend
-      ON calendar.day = daily_spend.day
-      ORDER BY calendar.day
-      `
-    )
-    .all({ user_id: user.userId });
-
-  return spend as DailySpend[];
-};
+  return iterationCount;
+}
 
 /* Returns the user's purchases between now and `days` ago */
 export const getRecentPurchases = (user: User, days: number): Purchase[] => {
@@ -352,11 +325,78 @@ export const getRecentPurchases = (user: User, days: number): Purchase[] => {
       FROM amended_purchase as p
       INNER JOIN user
       ON user.user_id = p.user_id
-      WHERE p.user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')`
+      WHERE p.user_id = :user_id AND timestamp > strftime('%s', 'now', '-${days} days', 'start of day')
+      ORDER BY p.timestamp`
     )
     .all({ user_id: user.userId }) as Purchase[];
 
   return purchases;
+};
+
+/* Returns the user's daily spend over the period.
+ * Period is in days
+ * The user's timezone offset is taken into consideration */
+export type DailySpend = {
+  date: DateTime;
+  spend: number;
+  purchases: Purchase[];
+};
+export const dailySpend = (user: User, period: number): DailySpend[] => {
+  // TODO: validate period
+  const zone = FixedOffsetZone.instance(user.tzOffset / 60);
+
+  // `now` needs to be zone-aware to get the correct unix timestamp corresponding
+  // to the start of the day, in the user's zone.
+  const now = DateTime.utc().setZone(zone);
+  const periodStart = now.plus({ days: -1 * period }).startOf("day");
+
+  const iterator = makeRangeIterator({
+    start: periodStart.toUnixInteger(),
+    end: now.toUnixInteger(),
+    step: 24 * 60 * 60,
+  });
+
+  const timeseries: DailySpend[] = [...iterator].map((t) => ({
+    date: DateTime.fromSeconds(t, { zone }),
+    spend: 0,
+    purchases: [],
+  }));
+
+  const purchases = getRecentPurchases(user, period);
+
+  if (purchases.length === 0) {
+    return timeseries;
+  }
+
+  let tsIdx = 0;
+  let purchaseIdx = 0;
+
+  while (tsIdx < timeseries.length) {
+    const start = timeseries[tsIdx].date;
+    const end = start.plus({ day: 1 });
+    const purchase = purchases[purchaseIdx];
+
+    if (!purchase) {
+      break;
+    } else {
+      // Note that the timestamp does not need to be modified to "factor" in the zone
+      // "Now" in unix timestamp is the same all over the world
+      // What's different is what time the unix timestamp corrsponds to.
+      const purchaseTimestamp = purchase.timestamp;
+      if (
+        purchaseTimestamp >= start.toUnixInteger() &&
+        purchaseTimestamp < end.toUnixInteger()
+      ) {
+        purchaseIdx += 1;
+        timeseries[tsIdx].purchases.push(purchase);
+        timeseries[tsIdx].spend += purchase.amountInCents;
+      } else {
+        tsIdx += 1;
+      }
+    }
+  }
+
+  return timeseries;
 };
 
 type AmendPurchaseArgs = {
@@ -379,4 +419,17 @@ export const amendPurchase = (amended: AmendPurchaseArgs) => {
     new_amount_in_cents = excluded.new_amount_in_cents,
     new_merchant = excluded.new_merchant`
   ).run(amended);
+};
+
+export const undoPurchaseAmendment = ({ id: purchaseId }: { id: number }) => {
+  const c = open();
+  // make sure the purchase exists
+  lookupPurchase({ id: purchaseId });
+
+  // delete the purchase amendment
+  c.prepare(
+    `
+    DELETE FROM purchase_amendment
+    WHERE purchase_id = ?`
+  ).run(purchaseId);
 };

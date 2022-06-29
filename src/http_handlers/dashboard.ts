@@ -1,14 +1,71 @@
-import { formatISO, fromUnixTime, getDay, parseISO } from "date-fns";
 import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
 import { centsToDollarString } from "../currency";
-import { dailySpend, getRecentPurchases, type User } from "../data";
-import { WEEKDAYS } from "../datetime";
+import {
+  amendPurchase,
+  dailySpend,
+  lookupPurchase,
+  undoPurchaseAmendment,
+  type User,
+} from "../data";
+import * as log from "../log";
 import type { HttpHandlerResponse } from "./http_handler";
 
+type PurchaseEdit = {
+  id: number;
+  merchant: string;
+  amountInCents: number;
+  action: "save" | "undo";
+};
+const parsePurchaseEdit = (
+  form: Record<string, string>
+): PurchaseEdit | undefined => {
+  let properties = ["id", "merchant", "amount", "action"];
+
+  if (!Object.keys(form).every((k) => properties.includes(k))) {
+    log.error(form, "invalid form");
+    return undefined;
+  }
+
+  const merchant = form["merchant"];
+
+  if (form["action"] !== "save" && form["action"] !== "undo") {
+    log.error(form, "invalid form action");
+    return undefined;
+  }
+
+  const id = Number.parseInt(form["id"]);
+  if (Number.isNaN(id)) {
+    log.error(form, "could not parse form id");
+    return undefined;
+  }
+
+  // TODO: should i just be using this to parse dollar amounts?
+  const amountInDollars = Number.parseFloat(form["amount"]);
+  if (Number.isNaN(amountInDollars)) {
+    log.error(form, "could not parse form amount");
+    return undefined;
+  }
+  const amountInCents = amountInDollars * 100;
+
+  return {
+    id,
+    merchant,
+    amountInCents,
+    action: form["action"],
+  };
+};
+
+type DashboardArgs = {
+  user: User;
+  form?: Record<string, string>;
+};
 /* Render a user's dashboard */
-export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
+export const dashboard = async ({
+  user,
+  form,
+}: DashboardArgs): Promise<HttpHandlerResponse> => {
   const template = await fs.readFile(
     path.join(__dirname, "../templates/dashboard.html"),
     {
@@ -16,10 +73,30 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
     }
   );
 
+  if (form) {
+    // user made a change to a purchase. Validate it
+    const edit = parsePurchaseEdit(form);
+    if (!edit) {
+      // invalid form submission
+      return { statusCode: 400 };
+    }
+
+    const purchase = lookupPurchase({ id: edit.id });
+    if (edit.action === "undo") {
+      // delete amendment
+      undoPurchaseAmendment({ id: edit.id });
+    } else {
+      amendPurchase({
+        purchaseId: purchase.purchaseId,
+        newAmountInCents: edit.amountInCents,
+        newMerchant: edit.merchant,
+      });
+    }
+  }
+
   // Only display purchases from the past 10 days
   const period = 10;
   const spend = dailySpend(user, period);
-  const purchases = getRecentPurchases(user, period);
 
   const maxSpend = spend
     .map((s) => s.spend)
@@ -27,62 +104,39 @@ export const dashboard = async (user: User): Promise<HttpHandlerResponse> => {
 
   const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
-  console.log({ spend });
-  const transformedSpend = spend.map(({ day, spend }) => {
+  const transformedSpend = spend.map(({ date, spend, purchases }) => {
     return {
-      date: day,
-      day: parseISO(day).getDate().toString().padStart(2, "0"),
-      dayOfWeek: WEEKDAYS[getDay(parseISO(day))].slice(0, 3).toLowerCase(),
+      day: date.day,
+      dayOfWeek: date.weekdayShort,
+      date: date.toISODate(),
       spendInDollars: centsToDollarString(spend),
       percentageOfMaxSpend: Math.floor((spend / maxSpend) * 100),
+      purchases: purchases.map((p) => ({
+        id: p.purchaseId,
+        merchant: p.merchant,
+        amount: centsToDollarString(p.amountInCents),
+        showSave: !p.isAmended,
+        showUndo: p.isAmended,
+      })),
     };
   });
-
-  type PurchaseView = { merchant: string; amount: string; id: number };
-  let purchaseByDate = purchases.reduce(
-    (acc: Record<string, PurchaseView[]>, curr) => {
-      const date = formatISO(fromUnixTime(curr.timestamp), {
-        representation: "date",
-      });
-      if (!acc[date]) {
-        acc[date] = [
-          {
-            id: curr.purchaseId,
-            merchant: curr.merchant,
-            amount: centsToDollarString(curr.amountInCents),
-          },
-        ];
-      } else {
-        acc[date].push({
-          id: curr.purchaseId,
-          merchant: curr.merchant,
-          amount: centsToDollarString(curr.amountInCents),
-        });
-      }
-      return acc;
-    },
-    {}
-  );
-
-  // transform the dictionary to an array for easier templating
-  let purchaseListByDate = [];
-  for (const [key, vals] of Object.entries(purchaseByDate)) {
-    purchaseListByDate.push({
-      date: key,
-      purchases: vals,
-    });
-  }
 
   const view = {
     email: user.userEmail,
     userId: user.userId,
     spend: transformedSpend,
     totalSpend: centsToDollarString(totalSpend),
-    purchaseByDate: purchaseListByDate,
     period,
   };
 
   const output = Mustache.render(template, view);
+  if (form) {
+    return {
+      statusCode: 303,
+      headers: { "Content-Type": "text/html", Location: "/dashboard" },
+      data: output,
+    };
+  }
   return {
     statusCode: 200,
     headers: { "Content-Type": "text/html" },

@@ -2,6 +2,8 @@
   --black: #3c3c3c;
   --white: #fdf7f1;
   --pink: #ec4067;
+  --gray: #7c7c7c;
+  --light-gray: #eee5e9;
 }
 
 /* 1 column layout */
@@ -70,6 +72,21 @@ textarea {
 input:focus,
 textarea:focus {
   border-bottom: 1px dashed var(--black);
+}
+
+input[type="submit"],
+button {
+  border: 1px solid var(--black);
+  padding: 0.3rem 0.3rem;
+  color: var(--black);
+  background-color: var(--white);
+  cursor: pointer;
+  border-radius: 0;
+}
+
+input[type="submit"]:disabled,
+button:disabled {
+  background-color: var(--gray);
 }
 
 /* bar chart styling */

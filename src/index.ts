@@ -7,9 +7,10 @@ import { createWtmmServer } from "./wtmm_server";
 open_and_init();
 
 // Start the server
-const PORT = config.get("server").port;
+const PORT = config.get("server.port");
+const ADDRESS = config.get("server.address");
 const server = createWtmmServer({
-  host: "127.0.0.1",
+  host: ADDRESS,
   port: PORT,
 });
 

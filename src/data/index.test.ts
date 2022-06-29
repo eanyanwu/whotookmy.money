@@ -9,8 +9,10 @@ import {
   EmailRateLimit,
   getOrCreateUser,
   getRecentPurchases,
+  InvalidArgs,
   lookupPurchase,
   lookupUser,
+  makeRangeIterator,
   markEmailSent,
   NoRowsReturned,
   pollUnsentEmail,
@@ -267,8 +269,11 @@ describe("dailySpend", () => {
     const spend = dailySpend(user, 4);
     assert.equal(spend.length, 5);
     assert.equal(spend[0].spend, 2400);
+    assert.equal(spend[0].purchases.length, 2);
     assert.equal(spend[1].spend, 2400);
+    assert.equal(spend[1].purchases.length, 1);
     assert.equal(spend[2].spend, 3600);
+    assert.equal(spend[2].purchases.length, 1);
     assert.equal(spend[3].spend, 0);
     assert.equal(spend[4].spend, 0);
   });
@@ -416,5 +421,46 @@ describe("amendPurchase", () => {
       .all();
 
     assert.deepStrictEqual(amendment, [[1, 199, "7eleven"]]);
+  });
+});
+
+describe("makeRangeIterator", () => {
+  it("fails on invalid args", () => {
+    assert.throws(
+      () => makeRangeIterator({ start: 0, end: 2, step: 0 }).next(),
+      InvalidArgs
+    );
+    assert.throws(
+      () => makeRangeIterator({ start: 0, end: 2, step: -1 }).next(),
+      InvalidArgs
+    );
+    assert.throws(
+      () => makeRangeIterator({ start: 2, end: 0, step: 1 }).next(),
+      InvalidArgs
+    );
+  });
+
+  it("generates an ascending range", () => {
+    const it = makeRangeIterator({ start: 0, end: 5, step: 1 });
+
+    const res = [...it];
+
+    assert.deepStrictEqual(res, [0, 1, 2, 3, 4]);
+  });
+
+  it("generates a descending range", () => {
+    const it = makeRangeIterator({ start: 5, end: 0, step: -1 });
+
+    const res = [...it];
+
+    assert.deepStrictEqual(res, [5, 4, 3, 2, 1]);
+  });
+
+  it("generates an empty range", () => {
+    const it = makeRangeIterator({ start: 1, end: 1, step: 1 });
+
+    const res = [...it];
+
+    assert.deepStrictEqual(res, []);
   });
 });

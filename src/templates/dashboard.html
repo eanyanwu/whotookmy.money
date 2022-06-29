@@ -32,18 +32,39 @@
         {{/spend}}
       </div>
     </section>
-    <!-- Tooltips. They are all hidden (display: none) by default
-          An on-click javascript handler displays them -->
-    {{#purchaseByDate}}
+    <!-- Tooltips. They are all hidden (display: none) by default -->
+    {{#spend}}
     <section id="{{ date }}" class="purchase-detail">
       {{#purchases}}
-      <form>
-        <input disabled spellcheck="false" type="text" value="{{ merchant }}" />
-        <input disabled type="number" step="0.01" value="{{ amount }}" />
+      <form enctype="multipart/form-data" method="POST" id="purchase-{{ id }}">
+        <input name="id" type="hidden" value="{{ id }}" />
+        <input
+          required
+          name="merchant"
+          spellcheck="false"
+          type="text"
+          value="{{ merchant }}"
+        />
+        <input
+          required
+          name="amount"
+          type="number"
+          step="0.01"
+          value="{{ amount }}"
+        />
+        {{#showSave}}
+        <button type="submit" name="action" value="save" class="form-submit">
+          save
+        </button>
+        {{/showSave}} {{#showUndo}}
+        <button type="submit" name="action" value="undo" class="form-submit">
+          undo
+        </button>
+        {{/showUndo}}
       </form>
       {{/purchases}}
     </section>
-    {{/purchaseByDate}}
+    {{/spend}}
     <script type="module" src="/public/dashboard.js"></script>
   </body>
 </html>

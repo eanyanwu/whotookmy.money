@@ -22,6 +22,11 @@ const config = convict({
       default: "wtmm.db",
       env: "DB_FILE",
     },
+    address: {
+      doc: "The address on which to bind wtmm_server",
+      default: "127.0.0.1",
+      env: "ADDRESS",
+    },
     port: {
       doc: "The port on which to bind wtmm_server",
       format: "port",
