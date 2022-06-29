@@ -1,10 +1,16 @@
 import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
-import { centsToDollarString, dollarStringToCents } from "../currency";
-import { dailySpend, lookupPurchase, amendPurchase, undoPurchaseAmendment, type User } from "../data";
-import type { HttpHandlerResponse } from "./http_handler";
+import { centsToDollarString } from "../currency";
+import {
+  amendPurchase,
+  dailySpend,
+  lookupPurchase,
+  undoPurchaseAmendment,
+  type User,
+} from "../data";
 import * as log from "../log";
+import type { HttpHandlerResponse } from "./http_handler";
 
 type PurchaseEdit = {
   id: number;
@@ -12,10 +18,12 @@ type PurchaseEdit = {
   amountInCents: number;
   action: "save" | "undo";
 };
-const parsePurchaseEdit = (form: Record<string, string>): PurchaseEdit | undefined => {
+const parsePurchaseEdit = (
+  form: Record<string, string>
+): PurchaseEdit | undefined => {
   let properties = ["id", "merchant", "amount", "action"];
 
-  if (!Object.keys(form).every(k => properties.includes(k))) {
+  if (!Object.keys(form).every((k) => properties.includes(k))) {
     log.error(form, "invalid form");
     return undefined;
   }
@@ -34,7 +42,7 @@ const parsePurchaseEdit = (form: Record<string, string>): PurchaseEdit | undefin
   }
 
   // TODO: should i just be using this to parse dollar amounts?
-  const  amountInDollars = Number.parseFloat(form["amount"]);
+  const amountInDollars = Number.parseFloat(form["amount"]);
   if (Number.isNaN(amountInDollars)) {
     log.error(form, "could not parse form amount");
     return undefined;
@@ -45,7 +53,7 @@ const parsePurchaseEdit = (form: Record<string, string>): PurchaseEdit | undefin
     id,
     merchant,
     amountInCents,
-    action: form["action"]
+    action: form["action"],
   };
 };
 
@@ -81,7 +89,7 @@ export const dashboard = async ({
       amendPurchase({
         purchaseId: purchase.purchaseId,
         newAmountInCents: edit.amountInCents,
-        newMerchant: edit.merchant
+        newMerchant: edit.merchant,
       });
     }
   }

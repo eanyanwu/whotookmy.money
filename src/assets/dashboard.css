@@ -43,11 +43,10 @@ input[name="bar"]:checked ~ .bar {
 }
 
 .form-submit {
-  width: 15%
+  width: 15%;
 }
 
 .form-submit[value="undo"] {
   color: var(--pink);
   border: 1px solid var(--pink);
 }
-

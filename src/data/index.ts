@@ -430,6 +430,6 @@ export const undoPurchaseAmendment = ({ id: purchaseId }: { id: number }) => {
   c.prepare(
     `
     DELETE FROM purchase_amendment
-    WHERE purchase_id = ?`,
-  ).run(purchaseId)
+    WHERE purchase_id = ?`
+  ).run(purchaseId);
 };
