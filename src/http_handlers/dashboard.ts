@@ -1,66 +1,17 @@
 import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
+import { modifyPurchase } from "../core";
 import { centsToDollarString } from "../currency";
-import {
-  amendPurchase,
-  dailySpend,
-  lookupPurchase,
-  undoPurchaseAmendment,
-  type User,
-} from "../data";
+import { dailySpend, type User } from "../data";
 import * as log from "../log";
 import type { HttpHandlerResponse } from "./http_handler";
-
-type PurchaseEdit = {
-  id: number;
-  merchant: string;
-  amountInCents: number;
-  action: "save" | "undo";
-};
-const parsePurchaseEdit = (
-  form: Record<string, string>
-): PurchaseEdit | undefined => {
-  let properties = ["id", "merchant", "amount", "action"];
-
-  if (!Object.keys(form).every((k) => properties.includes(k))) {
-    log.error(form, "invalid form");
-    return undefined;
-  }
-
-  const merchant = form["merchant"];
-
-  if (form["action"] !== "save" && form["action"] !== "undo") {
-    log.error(form, "invalid form action");
-    return undefined;
-  }
-
-  const id = Number.parseInt(form["id"]);
-  if (Number.isNaN(id)) {
-    log.error(form, "could not parse form id");
-    return undefined;
-  }
-
-  // TODO: should i just be using this to parse dollar amounts?
-  const amountInDollars = Number.parseFloat(form["amount"]);
-  if (Number.isNaN(amountInDollars)) {
-    log.error(form, "could not parse form amount");
-    return undefined;
-  }
-  const amountInCents = amountInDollars * 100;
-
-  return {
-    id,
-    merchant,
-    amountInCents,
-    action: form["action"],
-  };
-};
 
 type DashboardArgs = {
   user: User;
   form?: Record<string, string>;
 };
+
 /* Render a user's dashboard */
 export const dashboard = async ({
   user,
@@ -74,24 +25,7 @@ export const dashboard = async ({
   );
 
   if (form) {
-    // user made a change to a purchase. Validate it
-    const edit = parsePurchaseEdit(form);
-    if (!edit) {
-      // invalid form submission
-      return { statusCode: 400 };
-    }
-
-    const purchase = lookupPurchase({ id: edit.id });
-    if (edit.action === "undo") {
-      // delete amendment
-      undoPurchaseAmendment({ id: edit.id });
-    } else {
-      amendPurchase({
-        purchaseId: purchase.purchaseId,
-        newAmountInCents: edit.amountInCents,
-        newMerchant: edit.merchant,
-      });
-    }
+    modifyPurchase(form);
   }
 
   // Only display purchases from the past 10 days

@@ -41,8 +41,9 @@ export const createWtmmServer = (
       return { statusCode: 401 };
     }
 
+    // redirect to dashboard and set coookie
     return {
-      statusCode: 302,
+      statusCode: 303,
       headers: {
         Location: "/dashboard",
         "Set-Cookie": [
@@ -57,15 +58,17 @@ export const createWtmmServer = (
     ["GET", "POST"],
     "/dashboard",
     async function (this: RouteContext, req, _res) {
-      let form = undefined;
       if (req.method === "POST") {
         try {
-          form = await server.readFormData(req);
+          const form = await server.readFormData(req);
+          return dashboard({ user: this.user!, form });
         } catch (err) {
+          log.error("could not read form data", err);
           return { statusCode: 400 };
         }
+      } else {
+        return dashboard({ user: this.user! });
       }
-      return dashboard({ user: this.user!, form });
     }
   );
 

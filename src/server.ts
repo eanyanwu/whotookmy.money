@@ -61,10 +61,9 @@ export const createServerAsync = (
 /* Read a multiplart/form-data payload from the request */
 export const readFormData = (
   req: http.IncomingMessage
-): Promise<Record<string, string> | undefined> => {
+): Promise<Record<string, string>> => {
   return new Promise((resolve, reject) => {
-    let form: Record<string, string> | undefined = undefined;
-
+    let form: Record<string, string> = {};
     const bb = busboy({ headers: req.headers });
 
     bb.on("field", (name, value) => {
@@ -85,6 +84,7 @@ export const readFormData = (
     req.pipe(bb);
   });
 };
+
 /* Reads and returns the request payload as a `Buffer` */
 export const readRequestPayload = (
   req: http.IncomingMessage
