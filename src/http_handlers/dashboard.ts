@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
 import { modifyPurchase } from "../core";
-import { centsToDollarString } from "../currency";
+import * as curr from "../currency";
 import { dailySpend, type User } from "../data";
 import type { HttpHandlerResponse } from "./http_handler";
 
@@ -54,12 +54,12 @@ export const dashboard = async ({
       day: date.day,
       dayOfWeek: date.weekdayShort,
       date: date.toISODate(),
-      spendInDollars: centsToDollarString(spend),
+      spendInDollars: curr.toDollarString(spend),
       percentageOfMaxSpend: Math.floor((spend / yAxisHeight) * 100),
       purchases: purchases.map((p) => ({
         id: p.purchaseId,
         merchant: p.merchant,
-        amount: centsToDollarString(p.amountInCents),
+        amount: curr.toDollarString(p.amountInCents),
         showSave: !p.isAmended,
         showUndo: p.isAmended,
       })),
@@ -70,7 +70,7 @@ export const dashboard = async ({
     email: user.userEmail,
     userId: user.userId,
     spend: transformedSpend,
-    totalSpend: centsToDollarString(totalSpend),
+    totalSpend: curr.toDollarString(totalSpend),
     period,
     yAxisDivisions,
   };

@@ -1,6 +1,6 @@
 import config from "../config";
 import { generateMac } from "../crypto";
-import { dollarStringToCents } from "../currency";
+import * as curr from "../currency";
 import type { User } from "../data";
 import {
   getOrCreateUser,
@@ -131,7 +131,7 @@ const handlePurchaseAlert = (user: User, email: InboundEmail) => {
     throw new UnrecognizedBank(from);
   }
 
-  const amount = dollarStringToCents(amountStr);
+  const amount = curr.toCents(amountStr);
 
   savePurchase({ user, amount, merchant, timestamp: email.timestamp });
 };

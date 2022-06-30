@@ -1,30 +1,32 @@
 import assert from "assert";
-import {
-  centsToDollarString,
-  dollarStringToCents,
-  InvalidDollarString,
-} from "./currency";
+import * as curr from "./currency";
 
 describe("dollarStringToCents", () => {
   it("converts properly", () => {
-    assert.equal(dollarStringToCents("$0.1"), 1);
-    assert.equal(dollarStringToCents("$0.01"), 1);
-    assert.equal(dollarStringToCents("$0.10"), 10);
-    assert.equal(dollarStringToCents("$1.00"), 100);
-    assert.equal(dollarStringToCents("$10"), 1000);
+    assert.equal(curr.toCents("$.00"), 0);
+    assert.equal(curr.toCents("$0.1"), 10);
+    assert.equal(curr.toCents("$0.01"), 1);
+    assert.equal(curr.toCents("$0.10"), 10);
+    assert.equal(curr.toCents("$1.00"), 100);
+    assert.equal(curr.toCents("$10"), 1000);
+    assert.equal(curr.toCents("100"), 10000);
   });
 
   it("throw on invalid input", () => {
     // must have a dollar sign
-    assert.throws(() => dollarStringToCents("1.0"), InvalidDollarString);
+    assert.throws(() => curr.toCents("$invalid"), curr.InvalidDollarString);
   });
 });
 
 describe("centsToDollarString", () => {
   it("converts properly", () => {
-    assert.equal(centsToDollarString(0), "0.00");
-    assert.equal(centsToDollarString(10), "0.10");
-    assert.equal(centsToDollarString(100), "1.00");
-    assert.equal(centsToDollarString(10000), "100.00");
+    assert.equal(curr.toDollarString(0), "0.00");
+    assert.equal(curr.toDollarString(10), "0.10");
+    assert.equal(curr.toDollarString(100), "1.00");
+    assert.equal(curr.toDollarString(10000), "100.00");
+  });
+
+  it("throws on invalid cents amount", () => {
+    assert.throws(() => curr.toDollarString(1.1), curr.InvalidCentsAmount);
   });
 });
