@@ -35,7 +35,9 @@ export const dashboard = async ({
     .map((s) => s.spend)
     .reduce((a, b) => Math.max(a, b), -Infinity);
 
-  const yAxisInterval = 100_00;
+  // The y-axis interval depends on how much the max spend is.
+  // For now, keep the logic simple
+  const yAxisInterval = maxSpend > 1000_00 ? 400_00 : 100_00;
   const yAxisHeight = Math.ceil(maxSpend / yAxisInterval) * yAxisInterval;
   const yAxisDivisions = [];
   for (let i = yAxisInterval; i <= yAxisHeight; i += yAxisInterval) {
