@@ -1,51 +1,48 @@
+import Big from "big.js";
+
 export class InvalidDollarString extends Error {
   constructor(str: string) {
-    super("invalid dollar string. could not parse " + str);
+    super("invalid dollar string:" + str);
   }
 }
 
-export const centsToDollarString = (i: number): string => {
-  let dollarStr = i.toString().split("");
-  let len = dollarStr.length;
-
-  // Place a leading 0 in front of single cents
-  if (len === 1) {
-    len = dollarStr.unshift("0");
+export class InvalidCentsAmount extends Error {
+  constructor(n: number) {
+    super("number is not valid cents:" + n);
   }
+}
 
-  // Place the period
-  dollarStr.splice(len - 2, 0, ".");
-
-  // If the string was exactly 2 digits, place a leading 0
-  if (len == 2) {
-    dollarStr.unshift("0");
+const stripDollarSign = (d: string) => {
+  if (d[0] === "$") {
+    return d.slice(1);
   }
-
-  return dollarStr.join("");
+  return d;
 };
 
-/* Converts a dollar string (e.g. $100.00) into cents */
-export const dollarStringToCents = (i: string): number => {
-  let str: string = i;
-  // Strip the leading $
-  if (str.startsWith("$")) {
-    str = str.slice(1);
-  } else {
-    throw new InvalidDollarString(i);
+const addDollarSign = (d: string) => {
+  return "$" + d;
+};
+
+/* Convert a dollar string to cents
+ * Any reasonable representation should be accepted:
+ * $0.10 | .20 | $0.1 | 100 | $1000 etc..
+ */
+export const toCents = (d: string) => {
+  const dollarString = stripDollarSign(d);
+  try {
+    return Number.parseInt(Big(dollarString).times(100).toFixed(0));
+  } catch (err: any) {
+    throw new InvalidDollarString(err.message);
+  }
+};
+
+/* Convert from cents to a dollar string
+ * Input should be an integer
+ * */
+export const toDollarString = (i: number) => {
+  if (!Number.isInteger(i)) {
+    throw new InvalidCentsAmount(i);
   }
 
-  const [dollar_str, cents_str] = str.split(".");
-
-  if (dollar_str === undefined) {
-    throw new InvalidDollarString(i);
-  }
-
-  const dollars = Number.parseInt(dollar_str);
-  const cents = Number.parseInt(cents_str || "0");
-
-  if (Number.isNaN(dollars) || Number.isNaN(cents)) {
-    throw new InvalidDollarString(i);
-  }
-
-  return dollars * 100 + cents;
+  return Big(i).div(Big(100)).toFixed(2).toString();
 };

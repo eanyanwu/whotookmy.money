@@ -1,4 +1,4 @@
-import { dollarStringToCents } from "../currency";
+import * as curr from "../currency";
 import { amendPurchase, lookupPurchase, undoPurchaseAmendment } from "../data";
 import * as log from "../log";
 
@@ -35,7 +35,7 @@ export const modifyPurchase = (form: Record<string, string>) => {
   const dollarString = `\$${form["amount"]}`;
   let amountInCents = 0;
   try {
-    amountInCents = dollarStringToCents(dollarString);
+    amountInCents = curr.toCents(dollarString);
   } catch (err) {
     log.error(form, "could not parse amount");
     throw new MalformedPurchaseForm(form);
