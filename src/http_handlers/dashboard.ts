@@ -1,66 +1,16 @@
 import fs from "fs/promises";
 import Mustache from "mustache";
 import path from "path";
+import { modifyPurchase } from "../core";
 import { centsToDollarString } from "../currency";
-import {
-  amendPurchase,
-  dailySpend,
-  lookupPurchase,
-  undoPurchaseAmendment,
-  type User,
-} from "../data";
-import * as log from "../log";
+import { dailySpend, type User } from "../data";
 import type { HttpHandlerResponse } from "./http_handler";
-
-type PurchaseEdit = {
-  id: number;
-  merchant: string;
-  amountInCents: number;
-  action: "save" | "undo";
-};
-const parsePurchaseEdit = (
-  form: Record<string, string>
-): PurchaseEdit | undefined => {
-  let properties = ["id", "merchant", "amount", "action"];
-
-  if (!Object.keys(form).every((k) => properties.includes(k))) {
-    log.error(form, "invalid form");
-    return undefined;
-  }
-
-  const merchant = form["merchant"];
-
-  if (form["action"] !== "save" && form["action"] !== "undo") {
-    log.error(form, "invalid form action");
-    return undefined;
-  }
-
-  const id = Number.parseInt(form["id"]);
-  if (Number.isNaN(id)) {
-    log.error(form, "could not parse form id");
-    return undefined;
-  }
-
-  // TODO: should i just be using this to parse dollar amounts?
-  const amountInDollars = Number.parseFloat(form["amount"]);
-  if (Number.isNaN(amountInDollars)) {
-    log.error(form, "could not parse form amount");
-    return undefined;
-  }
-  const amountInCents = amountInDollars * 100;
-
-  return {
-    id,
-    merchant,
-    amountInCents,
-    action: form["action"],
-  };
-};
 
 type DashboardArgs = {
   user: User;
   form?: Record<string, string>;
 };
+
 /* Render a user's dashboard */
 export const dashboard = async ({
   user,
@@ -74,24 +24,7 @@ export const dashboard = async ({
   );
 
   if (form) {
-    // user made a change to a purchase. Validate it
-    const edit = parsePurchaseEdit(form);
-    if (!edit) {
-      // invalid form submission
-      return { statusCode: 400 };
-    }
-
-    const purchase = lookupPurchase({ id: edit.id });
-    if (edit.action === "undo") {
-      // delete amendment
-      undoPurchaseAmendment({ id: edit.id });
-    } else {
-      amendPurchase({
-        purchaseId: purchase.purchaseId,
-        newAmountInCents: edit.amountInCents,
-        newMerchant: edit.merchant,
-      });
-    }
+    modifyPurchase(form);
   }
 
   // Only display purchases from the past 10 days
@@ -102,6 +35,18 @@ export const dashboard = async ({
     .map((s) => s.spend)
     .reduce((a, b) => Math.max(a, b), -Infinity);
 
+  // The y-axis interval depends on how much the max spend is.
+  // For now, keep the logic simple
+  const yAxisInterval = maxSpend > 1000_00 ? 400_00 : 100_00;
+  const yAxisHeight = Math.ceil(maxSpend / yAxisInterval) * yAxisInterval;
+  const yAxisDivisions = [];
+  for (let i = yAxisInterval; i <= yAxisHeight; i += yAxisInterval) {
+    yAxisDivisions.push({
+      tick: i / 100,
+    });
+  }
+  yAxisDivisions.reverse();
+
   const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
   const transformedSpend = spend.map(({ date, spend, purchases }) => {
@@ -110,7 +55,7 @@ export const dashboard = async ({
       dayOfWeek: date.weekdayShort,
       date: date.toISODate(),
       spendInDollars: centsToDollarString(spend),
-      percentageOfMaxSpend: Math.floor((spend / maxSpend) * 100),
+      percentageOfMaxSpend: Math.floor((spend / yAxisHeight) * 100),
       purchases: purchases.map((p) => ({
         id: p.purchaseId,
         merchant: p.merchant,
@@ -127,6 +72,7 @@ export const dashboard = async ({
     spend: transformedSpend,
     totalSpend: centsToDollarString(totalSpend),
     period,
+    yAxisDivisions,
   };
 
   const output = Mustache.render(template, view);

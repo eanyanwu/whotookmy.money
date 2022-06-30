@@ -53,12 +53,15 @@ const error = (...rest: unknown[]) => {
   log("ERROR", ...rest);
 };
 
-const timer = (label: string) => {
-  console.time(label);
+const timer = () => {
+  const start = process.hrtime.bigint();
+
+  const done = (msg: string) => {
+    const ns = process.hrtime.bigint() - start;
+    debug(msg.replace(":time:", `${ns / 1000000n}`));
+  };
+
+  return { done };
 };
 
-const elapsed = (label: string) => {
-  console.timeEnd(label);
-};
-
-export { debug, info, warn, error, timer, elapsed };
+export { debug, info, warn, error, timer };

@@ -35,12 +35,13 @@ export const dollarStringToCents = (i: string): number => {
   }
 
   const [dollar_str, cents_str] = str.split(".");
-  if (dollar_str === undefined || cents_str === undefined) {
+
+  if (dollar_str === undefined) {
     throw new InvalidDollarString(i);
   }
 
   const dollars = Number.parseInt(dollar_str);
-  const cents = Number.parseInt(cents_str);
+  const cents = Number.parseInt(cents_str || "0");
 
   if (Number.isNaN(dollars) || Number.isNaN(cents)) {
     throw new InvalidDollarString(i);

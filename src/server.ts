@@ -17,7 +17,12 @@ export type CreateServerOptions = {
 // to the server are sent to the `onRequest` callback
 export const createServer = (opts: CreateServerOptions) => {
   const server = http.createServer();
-  server.on("request", opts.onRequest);
+  server.on("request", async (req, res) => {
+    const timer = log.timer();
+    await opts.onRequest(req, res);
+    log.info(`${req.method}`, `${req.url}`, `${res.statusCode}`);
+    timer.done("request processed in :time:ms");
+  });
   server.on("listening", () => {
     // save coercion as listening on an IP port always returns AddressInfo
     const { port, address } = server.address() as net.AddressInfo;
@@ -61,10 +66,9 @@ export const createServerAsync = (
 /* Read a multiplart/form-data payload from the request */
 export const readFormData = (
   req: http.IncomingMessage
-): Promise<Record<string, string> | undefined> => {
+): Promise<Record<string, string>> => {
   return new Promise((resolve, reject) => {
-    let form: Record<string, string> | undefined = undefined;
-
+    let form: Record<string, string> = {};
     const bb = busboy({ headers: req.headers });
 
     bb.on("field", (name, value) => {
@@ -85,6 +89,7 @@ export const readFormData = (
     req.pipe(bb);
   });
 };
+
 /* Reads and returns the request payload as a `Buffer` */
 export const readRequestPayload = (
   req: http.IncomingMessage
