@@ -52,26 +52,10 @@
       {{#purchases}}
       <form enctype="multipart/form-data" method="POST" id="purchase-{{ id }}">
         <input name="id" type="hidden" value="{{ id }}" />
-        <input
-          {{#showUndo}}
-          readonly
-          {{/showUndo}}
-          required
-          name="merchant"
-          spellcheck="false"
-          type="text"
-          value="{{ merchant }}"
-        />
-        <input
-          {{#showUndo}}
-          readonly
-          {{/showUndo}}
-          required
-          name="amount"
-          type="number"
-          step="0.01"
-          value="{{ amount }}"
-        />
+        <input {{#showUndo}} readonly {{/showUndo}} required name="merchant"
+        spellcheck="false" type="text" value="{{ merchant }}" /> <input
+        {{#showUndo}} readonly {{/showUndo}} required name="amount"
+        type="number" step="0.01" value="{{ amount }}" />
         <!-- SAVE -->
         {{#showSave}}
         <button type="submit" name="action" value="save" class="form-submit">
