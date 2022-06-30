@@ -4,7 +4,6 @@ import path from "path";
 import { modifyPurchase } from "../core";
 import { centsToDollarString } from "../currency";
 import { dailySpend, type User } from "../data";
-import * as log from "../log";
 import type { HttpHandlerResponse } from "./http_handler";
 
 type DashboardArgs = {
@@ -36,6 +35,16 @@ export const dashboard = async ({
     .map((s) => s.spend)
     .reduce((a, b) => Math.max(a, b), -Infinity);
 
+  const yAxisInterval = 100_00;
+  const yAxisHeight = Math.ceil(maxSpend / yAxisInterval) * yAxisInterval;
+  const yAxisDivisions = [];
+  for (let i = yAxisInterval; i <= yAxisHeight; i += yAxisInterval) {
+    yAxisDivisions.push({
+      tick: i / 100,
+    });
+  }
+  yAxisDivisions.reverse();
+
   const totalSpend = spend.map((s) => s.spend).reduce((a, b) => a + b, 0);
 
   const transformedSpend = spend.map(({ date, spend, purchases }) => {
@@ -44,7 +53,7 @@ export const dashboard = async ({
       dayOfWeek: date.weekdayShort,
       date: date.toISODate(),
       spendInDollars: centsToDollarString(spend),
-      percentageOfMaxSpend: Math.floor((spend / maxSpend) * 100),
+      percentageOfMaxSpend: Math.floor((spend / yAxisHeight) * 100),
       purchases: purchases.map((p) => ({
         id: p.purchaseId,
         merchant: p.merchant,
@@ -61,6 +70,7 @@ export const dashboard = async ({
     spend: transformedSpend,
     totalSpend: centsToDollarString(totalSpend),
     period,
+    yAxisDivisions,
   };
 
   const output = Mustache.render(template, view);

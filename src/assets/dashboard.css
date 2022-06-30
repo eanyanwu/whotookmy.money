@@ -8,6 +8,11 @@
   --gray: #7c7c7c;
 }
 
+/* when a bar is selected, highlight it */
+input[name="bar"]:checked ~ .bar {
+  background-color: var(--pink);
+}
+
 /* purchase details are originally hidden */
 .purchase-detail {
   display: none;
@@ -19,13 +24,12 @@
   flex-direction: column;
 }
 
-/* when a bar is selected, highlight it */
-input[name="bar"]:checked ~ .bar {
-  background-color: var(--pink);
+.purchase-detail-header {
+  padding: 1rem 0;
+  text-align: right;
 }
 
 /* purchase modification forms */
-
 /* each purchase gets a row */
 .purchase-detail form {
   display: flex;

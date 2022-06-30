@@ -20,11 +20,7 @@ export const createServer = (opts: CreateServerOptions) => {
   server.on("request", async (req, res) => {
     const timer = log.timer();
     await opts.onRequest(req, res);
-    log.info(
-      `${req.method}`,
-      `${req.url}`,
-      `${res.statusCode}`,
-    );
+    log.info(`${req.method}`, `${req.url}`, `${res.statusCode}`);
     timer.done("request processed in :time:ms");
   });
   server.on("listening", () => {

@@ -55,6 +55,11 @@ p + p {
   font-size: 0.75rem;
 }
 
+/* font weights */
+.b {
+  font-weight: bold;
+}
+
 /* input */
 input,
 textarea {
@@ -81,7 +86,7 @@ button {
   color: var(--black);
   background-color: var(--white);
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 0px;
 }
 
 input[type="submit"]:disabled,
@@ -92,47 +97,92 @@ button:disabled {
 /* bar chart styling */
 
 .bar-chart {
-  /* give the chart an explicit height. */
+  /* Give the bar chart a fixed height */
   height: 15rem;
 
-  /* positions the list items on a line */
-  display: flex;
-  flex-direction: row;
-}
-
-.bar-chart > div {
-  /* list items should start with the same width, and grow/shring to remaining space */
-  flex: 1;
-  width: 0;
-  /* list items are laid out from the bottom up */
+  /* a bar chart has 2 main sections: the chart area and the xaxis label area
+   * position the chart area on top of the xaxis label area */
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
 }
 
-.bar-chart .bar-chart-data-label {
-  /* The label on top of the bar should be centered and small */
-  font-size: 0.7rem;
-  text-align: center;
-  margin-bottom: 0.4rem;
+.bar-chart-area {
+  /* Take up any remaining space. */
+  flex: 1;
+
+  /* Position each bar in a row */
+  display: flex;
+  flex-direction: row;
+
+  /* The bars should start from the bottom */
+  align-items: flex-end;
+
+  /* this will allow for positioning th yaxis absolutely behind the chart area */
+  position: relative;
+  z-index: 1;
 }
 
-.bar-chart .bar-chart-xaxis-label {
-  /* The x-axis label should be centered and small */
-  font-size: 0.7rem;
-  text-align: center;
-  padding-top: 0.4rem;
-  /* Draw the x-axis */
-  border-top: 1px solid var(--black);
+.bar-chart-label-area {
+  /* Display all the x-axis labels in a line */
+  display: flex;
+
+  /* This area has a fixed height */
+  flex: 0 0 30px;
 }
 
 .bar {
+  /* each bar should start with the same width, and grow/shrink to remaining space */
+  width: 0;
+  flex: 1;
+
   display: block;
   background-color: var(--black);
+
   /* Give the bars some space */
-  margin: 0 5px;
+  margin-right: 5px;
+
+  border-radius: 2px 2px 0 0;
+
 }
 
+/* when a bar is selected */
 .bar-selected {
   background-color: var(--pink);
+}
+
+.bar-chart-label-area > div {
+  /* The x-axis labels should be centered and small */
+  font-size: 0.7rem;
+  text-align: center;
+  padding-top: 0.4rem;
+
+  /* Like the bars, each label should start at the same width and grow/shrink
+   * to remaining space */
+  width: 0;
+  flex: 1;
+
+  /* draw the x axis */
+  border-top: 1px solid var(--black);
+}
+
+/* The yAxis is drawn behind the chart area */
+.bar-chart-area > .bar-chart-yaxis {
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+
+  font-size: 0.7rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Every yAxis division is sized equally */
+.bar-chart-yaxis > div {
+  flex: 1;
+  border-top: 1px dashed var(--black);
+  text-align: right;
 }

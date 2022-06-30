@@ -17,24 +17,38 @@
     <!-- DAILY SPEND BAR CHART -->
     <section>
       <div class="bar-chart">
-        {{#spend}}
-        <div>
-          <div class="bar-chart-data-label">{{ spendInDollars }}</div>
+        <div class="bar-chart-area">
+          {{#spend}}
           <a
             href="#{{ date }}"
             class="bar"
             style="height:{{ percentageOfMaxSpend }}%"
           ></a>
-          <div class="bar-chart-xaxis-label">
-            {{ dayOfWeek }}<br />{{ day }}
+          {{/spend}}
+          <!-- placeholder bar to allow room for the yAxis labels -->
+          <div class="bar" style="height: 0"></div>
+          <div class="bar-chart-yaxis">
+            {{#yAxisDivisions}}
+            <div>${{ tick }}</div>
+            {{/yAxisDivisions}}
           </div>
         </div>
-        {{/spend}}
+        <div class="bar-chart-label-area">
+          {{#spend}}
+          <div>{{ dayOfWeek }}<br />{{ day }}</div>
+          {{/spend}}
+          <!-- placeholder label to allow room for the yAxis labels -->
+          <div style="width: 0"></div>
+        </div>
       </div>
     </section>
     <!-- Tooltips. They are all hidden (display: none) by default -->
     {{#spend}}
     <section id="{{ date }}" class="purchase-detail">
+      <div class="purchase-detail-header">
+        <span class="f6 b">Total:</span>
+        <span class="f4">${{ spendInDollars }}</span>
+      </div>
       {{#purchases}}
       <form enctype="multipart/form-data" method="POST" id="purchase-{{ id }}">
         <input name="id" type="hidden" value="{{ id }}" />
@@ -52,11 +66,14 @@
           step="0.01"
           value="{{ amount }}"
         />
+        <!-- SAVE -->
         {{#showSave}}
         <button type="submit" name="action" value="save" class="form-submit">
           save
         </button>
-        {{/showSave}} {{#showUndo}}
+        {{/showSave}}
+        <!-- UNDO -->
+        {{#showUndo}}
         <button type="submit" name="action" value="undo" class="form-submit">
           undo
         </button>

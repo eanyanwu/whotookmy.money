@@ -64,5 +64,4 @@ const timer = () => {
   return { done };
 };
 
-
 export { debug, info, warn, error, timer };
