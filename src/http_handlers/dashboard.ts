@@ -28,7 +28,7 @@ export const dashboard = async ({
   }
 
   // Only display purchases from the past 10 days
-  const period = 10;
+  const period = 13;
   const spend = dailySpend(user, period);
 
   const maxSpend = spend
