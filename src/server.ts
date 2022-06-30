@@ -17,7 +17,16 @@ export type CreateServerOptions = {
 // to the server are sent to the `onRequest` callback
 export const createServer = (opts: CreateServerOptions) => {
   const server = http.createServer();
-  server.on("request", opts.onRequest);
+  server.on("request", async (req, res) => {
+    const timer = log.timer();
+    await opts.onRequest(req, res);
+    log.info(
+      `${req.method}`,
+      `${req.url}`,
+      `${res.statusCode}`,
+    );
+    timer.done("request processed in :time:ms");
+  });
   server.on("listening", () => {
     // save coercion as listening on an IP port always returns AddressInfo
     const { port, address } = server.address() as net.AddressInfo;

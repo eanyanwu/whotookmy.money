@@ -104,13 +104,6 @@ export const createWtmmServer = (
       context
     );
 
-    log.info(
-      `${req.method}`,
-      `${req.url}`,
-      `${response.statusCode}`,
-      `${response.data ? response.data.length : 0}`
-    );
-
     res.writeHead(response.statusCode, { ...response.headers });
     res.end(response.data);
   };
