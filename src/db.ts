@@ -73,6 +73,16 @@ const MIGRATIONS: M[] = [
     LEFT JOIN amend as a
     ON a.purchase_id = p.purchase_id`
   ),
+  M.up(
+    `
+    CREATE TABLE deposit (
+      deposit_id INTEGER PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+      amount_in_cents INTEGER NOT NULL,
+      deposited_on INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFULAT (strftime('%s'))
+    );`
+  ),
 ];
 
 /* Creates and returns a connection to the database */
