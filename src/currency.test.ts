@@ -10,6 +10,7 @@ describe("dollarStringToCents", () => {
     assert.equal(curr.toCents("$1.00"), 100);
     assert.equal(curr.toCents("$10"), 1000);
     assert.equal(curr.toCents("100"), 10000);
+    assert.equal(curr.toCents("1,900.00"), 190000);
   });
 
   it("throw on invalid input", () => {
