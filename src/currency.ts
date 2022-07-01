@@ -19,6 +19,10 @@ const stripDollarSign = (d: string) => {
   return d;
 };
 
+const stripCommaDelimiter = (d: string) => {
+  return d.replace(",", "");
+};
+
 const addDollarSign = (d: string) => {
   return "$" + d;
 };
@@ -28,7 +32,7 @@ const addDollarSign = (d: string) => {
  * $0.10 | .20 | $0.1 | 100 | $1000 etc..
  */
 export const toCents = (d: string) => {
-  const dollarString = stripDollarSign(d);
+  const dollarString = stripCommaDelimiter(stripDollarSign(d));
   try {
     return Number.parseInt(Big(dollarString).times(100).toFixed(0));
   } catch (err: any) {
