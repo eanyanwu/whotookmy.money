@@ -391,8 +391,8 @@ export const dailySpend = (user: User, period: number): DailySpend[] => {
         timeseries[tsIdx].purchases.push(purchase);
         timeseries[tsIdx].spend += purchase.amountInCents;
       } else {
-        // TODO: actially figure this edge case out. 
-        // getRecentPurchases sometimes returns purchases before the start time 
+        // TODO: actially figure this edge case out.
+        // getRecentPurchases sometimes returns purchases before the start time
         if (purchaseTimestamp < start.toUnixInteger()) {
           purchaseIdx += 1;
           continue;
