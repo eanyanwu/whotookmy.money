@@ -55,7 +55,7 @@ export const dashboard = async ({
       dayOfWeek: date.weekdayShort,
       date: date.toISODate(),
       spendInDollars: curr.toDollarString(spend),
-      percentageOfMaxSpend: Math.floor((spend / yAxisHeight) * 100),
+      percentageOfMaxSpend: Math.ceil((spend / yAxisHeight) * 100),
       purchases: purchases.map((p) => ({
         id: p.purchaseId,
         merchant: p.merchant,
