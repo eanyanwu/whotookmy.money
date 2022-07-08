@@ -26,8 +26,8 @@
       src: sqlite_backup.timer
     - dest: "~/.config/systemd/user/{{ application_name }}_backup.service"
       src: sqlite_backup.service
-- name: start binaries
-  systemd:
+- name: start binary 
+  ansible.builtin.systemd:
     daemon_reload: true
     name: "{{ application_name }}.target"
     enabled: yes
