@@ -12,7 +12,10 @@
     - curl
     - sqlite3
     - fail2ban
+    - unzip
 - name: install NGNIX
   ansible.builtin.import_tasks: "{{ role_path }}/tasks/nginx.yml"
 - name: install CERTBOT
   ansible.builtin.import_tasks: "{{ role_path }}/tasks/certbot.yml"
+- name: isntall AWS CLI
+  ansible.builtin.import_tasks: "{{ role_path }}/tasks/awscli.yml"

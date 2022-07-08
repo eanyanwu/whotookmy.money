@@ -1,0 +1,10 @@
+- name: (AWS CLI) download
+  ansible.builtin.command: >
+    curl
+    "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+    -o "awscliv2.zip"
+- name: (AWS CLI) unzip
+  ansible.builtin.command: unzip awscliv2.zip
+- name: (AWS CLI) install
+  ansible.builtin.command: ./aws/install
+    
