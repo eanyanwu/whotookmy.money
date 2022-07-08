@@ -22,6 +22,10 @@
       src: wtmm_server.service
     - dest: "~/.config/systemd/user/{{ application_name }}.target"
       src: wtmm.target
+    - dest: "~/.config/systemd/user/{{ application_name }}_backup.timer"
+      src: sqlite_backup.timer
+    - dest: "~/.config/systemd/user/{{ application_name }}_backup.service"
+      src: sqlite_backup.service
 - name: start binaries
   systemd:
     daemon_reload: true

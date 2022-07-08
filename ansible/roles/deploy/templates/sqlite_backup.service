@@ -1,0 +1,11 @@
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash -c "\
+            /usr/local/bin/aws \
+            s3 cp \
+            ~/{{ application_folder }}/wtmm.db s3://wtmm/{{ application_name }}-`date +%d`.db"
+Environment="AWS_ACCESS_KEY_ID={{ aws_access_key_id }} \
+              AWS_SECRET_ACCESS_KEY={{ aws_secret_access_key }} \
+              AWS_DEFAULT_REGION={{ aws_default_region }}"
+
+
