@@ -1,9 +1,19 @@
 [Service]
 Type=oneshot
-ExecStart="/usr/bin/bash -c \"/usr/local/bin/aws s3 cp \
-            ~/{{ application_folder }}/wtmm.db s3://wtmm/{{ application_name }}-`date +%%d`.db\" "
-Environment="AWS_ACCESS_KEY_ID={{ aws_access_key_id }} \
-              AWS_SECRET_ACCESS_KEY={{ aws_secret_access_key }} \
-              AWS_DEFAULT_REGION={{ aws_default_region }}"
 
+# Backup the database
+ExecStart=sqlite3 %h/{{ application_folder }}/wtmm.db ".backup %h/{{ application_folder }}/wtmm.db.bak
 
+# Upload it to s3
+# The date specifier needs to be quoted because percentages are special in systemd unit syntax
+ExecStart=/usr/bin/bash -c \
+"aws s3 cp %h/{{ application_folder }}/wtmm.db.bak s3://wtmm/{{ application_name }}-`date +%%d`.db"
+
+# Using these credentials
+Environment="AWS_ACCESS_KEY_ID={{ aws_access_key_id }}"
+Environment="AWS_SECRET_ACCESS_KEY={{ aws_secret_access_key }}"
+Environment="AWS_DEFAULT_REGION={{ aws_default_region }}"
+
+StandardInput=null
+StandardOutput=journal
+StandardError=inherit
