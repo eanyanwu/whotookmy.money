@@ -29,6 +29,7 @@
 - name: reload systemd configs
   ansible.builtin.systemd:
     daemon_reload: true
+    scope: user
 - name: start binary 
   ansible.builtin.systemd:
     name: "{{ application_name }}.target"
