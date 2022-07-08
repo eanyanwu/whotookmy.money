@@ -27,6 +27,9 @@
     wtmm_server_port: "{{ env_wtmm_server_port_map[env] }}"
     email_domain: "{{ env_email_domain_map[env] }}"
     wtmm_mac_key: "{{ env_wtmm_mac_key_map[env] }}"
+    aws_access_key_id: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    aws_secret_access_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+    aws_default_region: "{{ lookup('env', 'AWS_DEFAULT_REGION') }}"
 
   roles:
     - deploy

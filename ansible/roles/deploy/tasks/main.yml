@@ -22,10 +22,23 @@
       src: wtmm_server.service
     - dest: "~/.config/systemd/user/{{ application_name }}.target"
       src: wtmm.target
-- name: start binaries
-  systemd:
+    - dest: "~/.config/systemd/user/{{ application_name }}_backup.timer"
+      src: sqlite_backup.timer
+    - dest: "~/.config/systemd/user/{{ application_name }}_backup.service"
+      src: sqlite_backup.service
+- name: reload systemd configs
+  ansible.builtin.systemd:
     daemon_reload: true
+    scope: user
+- name: start binary 
+  ansible.builtin.systemd:
     name: "{{ application_name }}.target"
+    enabled: yes
+    state: restarted
+    scope: user
+- name: enable the backup timer
+  ansible.builtin.systemd:
+    name: "{{ application_name}}_backup.timer"
     enabled: yes
     state: restarted
     scope: user
