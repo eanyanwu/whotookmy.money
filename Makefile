@@ -29,3 +29,14 @@ ansible-deploy-prod:
 ansible-provision:
 	cd ansible && \
 		ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --inventory hosts provision.yml
+
+# It is often useful to get a copy of the prod/dev database files
+# Make sure that the deployment private key has been registered with the ssh agent
+download-dev-db:
+	mkdir -p tmp
+	cd tmp && scp deploy-user@whotookmy.money:~/.dev_wtmm/wtmm.db dev_wtmm.db
+
+download-prod-db:
+	mkdir -p tmp
+	cd tmp && scp deploy-user@whotookmy.money:~/.wtmm/wtmm.db wtmm.db
+	
