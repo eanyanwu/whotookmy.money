@@ -20,4 +20,24 @@ In production, the file is created adjacent  to the deployed binary.
 A SystemD timer runs daily to back up the Sqlite3 database to an AWS S3 bucket.
 This timer file is also checked-in to the repo.
 
+# Deployment, SSH and Keys
+
+Ansible allows me to easily automate setting up and running arbitrary scripts on
+remote machines. It uses SSH to do so.
+
+The recommended way to use SSH is using Public/Private keys. The user holds the
+private key, and the machine that they'd like to connect to should have a copy
+of the public key.
+
+When provisioning the machine for the first time, add the deployment SSH public key to
+the root account so that the CI machines can connect to it and provision it.
+As part of that provisioning, that same public key is copied to the deploy-user
+account as well. This allows us to SSH as the deploy-user.
+
+Note: You probably will have some other personal SSH key pair saved as id_rsa.
+To SSH to the production machine with the deployment key pair, you'll need to
+add it to the list of key pairs that the ssh agent knows about using `ssh-add`
+
+# DNS
+
 
